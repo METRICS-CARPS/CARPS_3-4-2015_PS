@@ -42,27 +42,54 @@ library(readxl) # import excel files
 library(CARPSreports) # custom report functions
 ```
 
+```{r Load package for repeated measures anova}
+
+library(ez) # for repeated ANOVAs
+
+```
+
+
 ## Step 2: Load data
 
 ```{r Load data}
 
-d <- read.table("data/Bogus visual feedback alters movement_Data.tab")
-
+d <- read.table("data/Bogus visual feedback alters movement_Data.tab", header=TRUE)
 
 ```
 
 ## Step 3: Tidy data
 
-```{r}
+```{r Clean data -- Simplify column names}
+
+d <- d %>%
+  rename(condition1 = Condition1_Gain0.8,
+         condition2 = Condition2_Gain1,
+         condition3 = Condition3_Gain1.2)
+
+
+```
+
+
+```{r Tidy data}
+
+d.tidy <- d %>%
+  gather(condition,rangeofmotion,starts_with("condition"))
+
+
 ```
 
 ## Step 4: Run analysis
 
 ### Pre-processing
 
-[you can remove this section if no pre-processing is required]
+Assumption 1: The paper indicates that the data needs to be normalized: "To account for between-subject differences in range of motion, we transformed data for each participant to a proportion of the average range of motion demonstrated in the neutral condition." However, given the range of motion before feeling pain is 1 for each participant under the neutral (pain gain = 1) condition, I *assume the data has already been normalized.*
 
-```{r}
+Assumption 2: The paper speaks of "participant’s average movement-evoked pain for each condition." As such, I assume that I need to average the left & right (e.g. direction of rotation 1 & 2).
+
+```{r Average by condition}
+
+
+
 ```
 
 ### Descriptive statistics
@@ -72,7 +99,26 @@ d <- read.table("data/Bogus visual feedback alters movement_Data.tab")
 
 ### Inferential statistics
 
-```{r}
+```{r Repeated Measuers ANOVA}
+
+dANOVA <- ezANOVA(data = d.tidy,
+                  dv = rangeofmotion,
+                  wid = Participant,
+                  within = condition,
+                  detailed = TRUE)
+
+print(dANOVA)
+
+#demoAnova <- ezANOVA(myData, # specify data frame
+#                     dv = RT, # specify dependent variable 
+#                     wid = subject, # specify the subject variable
+#                     within = .(block, check), # specify within-subject variables
+#                     detailed = TRUE # get a detailed table that includes SS
+#                     )
+
+#Repeated ANOVA in R: http://sherifsoliman.com/2014/12/10/ANOVA_in_R/ ; https://www.r-statistics.com/2010/04/repeated-measures-anova-with-r-tutorials/
+
+
 ```
 
 ## Step 5: Conclusion
