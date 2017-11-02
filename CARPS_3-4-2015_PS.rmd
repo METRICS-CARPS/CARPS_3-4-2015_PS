@@ -45,7 +45,7 @@ library(CARPSreports) # custom report functions
 ```{r Load package for repeated measures anova}
 
 library(ez) # for repeated ANOVAs
-
+library(effsize) #for effect size
 ```
 
 
@@ -59,22 +59,21 @@ d <- read.table("data/Bogus visual feedback alters movement_Data.tab", header=TR
 
 ## Step 3: Tidy data
 
-```{r Clean data -- Simplify column names}
-
-d <- d %>%
-  rename(condition1 = Condition1_Gain0.8,
-         condition2 = Condition2_Gain1,
-         condition3 = Condition3_Gain1.2)
-
-
-```
-
-
 ```{r Tidy data}
 
 d.tidy <- d %>%
-  gather(condition,rangeofmotion,starts_with("condition"))
+  gather(condition,rangeofmotion,starts_with("condition")) #the value various condition columns contains are the range of motion
 
+
+#REFERENCE: The below leads to same results (collapsing across conditions). FYI, there are 2 trials per condition, as participant looked to left & right. The below collapses across.
+
+#d.tidy2 <- d.cleaned %>%
+#  group_by(Participant) %>%
+#  summarise(meancondition1 = mean(condition1),
+#           meancondition2 = mean(condition2),
+#              meancondition3 = mean(condition3)
+#              ) %>%
+#  gather(condition,rangeofmotion,starts_with("mean"))
 
 ```
 
@@ -88,26 +87,42 @@ Assumption 2: The paper speaks of "participant’s average movement-evoked pain 
 
 ```{r Average by condition}
 
+#For T tests
 
+d.comparison <- d %>%
+  group_by(Participant) %>%
+  summarise(meancondition1_gain0.8 = mean(Condition1_Gain0.8),
+            meancondition2_gain1 = mean(Condition2_Gain1),
+            meancondition3_gain1.2 = mean(Condition3_Gain1.2)
+              )
+  
+  
+#For comparing means
+
+  d.simplified <- d.comparison %>%
+    gather(condition,rangeofmotion,starts_with("mean")) %>%
+    group_by(condition) %>%
+    summarise(meanrangeofmotion = mean(rangeofmotion))
 
 ```
 
 ### Descriptive statistics
 
 ```{r}
+
 ```
 
 ### Inferential statistics
 
 ```{r Repeated Measuers ANOVA}
 
-dANOVA <- ezANOVA(data = d.tidy,
+modANOVA <- ezANOVA(data = d.tidy,
                   dv = rangeofmotion,
                   wid = Participant,
-                  within = condition,
+                  within = .(condition),
                   detailed = TRUE)
 
-print(dANOVA)
+print(modANOVA)
 
 #demoAnova <- ezANOVA(myData, # specify data frame
 #                     dv = RT, # specify dependent variable 
@@ -120,6 +135,34 @@ print(dANOVA)
 
 
 ```
+
+```{r T tests}
+
+#T-test by condition
+
+ttest_0.8v1 <- t.test(d.comparison$meancondition1_gain0.8, d.comparison$meancondition2_gain1, paired = TRUE)
+
+ttest_0.8v1.2 <- t.test(d.comparison$meancondition1_gain0.8, d.comparison$meancondition3_gain1.2, paired = TRUE)
+
+ttest_1v1.2 <- t.test(d.comparison$meancondition2_gain1, d.comparison$meancondition3_gain1.2, paired = TRUE)
+
+print(ttest_0.8v1)
+print(ttest_0.8v1.2)
+print(ttest_1v1.2)
+
+```
+
+
+```{r Comparison of effect sized}
+
+
+cohen.d(d.comparison$meancondition1_gain0.8)
+
+cohen.d(d.comparison$meancondition2_gain1, d.comparison$meancondition3_gain1.2)
+
+
+```
+
 
 ## Step 5: Conclusion
 
