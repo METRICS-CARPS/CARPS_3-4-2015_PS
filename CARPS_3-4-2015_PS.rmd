@@ -46,6 +46,8 @@ library(CARPSreports) # custom report functions
 
 library(ez) # for repeated ANOVAs
 library(effsize) #for effect size
+library(compute.es) #for effect size
+library(lsr) #for partial eta squared
 ```
 
 
@@ -61,19 +63,24 @@ d <- read.table("data/Bogus visual feedback alters movement_Data.tab", header=TR
 
 ```{r Tidy data}
 
-d.tidy <- d %>%
+#Tidy 1 -- tidying across condition
+
+d.tidy.1 <- d %>%
   gather(condition,rangeofmotion,starts_with("condition")) #the value various condition columns contains are the range of motion
 
+d.tidy.1$Participant <- as.factor(d.tidy.1$Participant)
+d.tidy.1$condition <- as.factor(d.tidy.1$condition)
 
-#REFERENCE: The below leads to same results (collapsing across conditions). FYI, there are 2 trials per condition, as participant looked to left & right. The below collapses across.
 
-#d.tidy2 <- d.cleaned %>%
-#  group_by(Participant) %>%
-#  summarise(meancondition1 = mean(condition1),
-#           meancondition2 = mean(condition2),
-#              meancondition3 = mean(condition3)
-#              ) %>%
-#  gather(condition,rangeofmotion,starts_with("mean"))
+#Tidy 2 -- testing hypothesis of looking at participant per direction as a separate trial
+
+d.tidy.2 <- d %>%
+  mutate(trial = Participant * DirectionofRotation) %>% # creates a separate row at a participation * rotation
+  select(-Participant,-DirectionofRotation) %>%
+  gather(condition,rangeofmotion,starts_with("condition")) 
+  
+d.tidy.2$trial <- as.factor(d.tidy.2$trial)
+d.tidy.2$condition <- as.factor(d.tidy.2$condition)
 
 ```
 
@@ -84,6 +91,8 @@ d.tidy <- d %>%
 Assumption 1: The paper indicates that the data needs to be normalized: "To account for between-subject differences in range of motion, we transformed data for each participant to a proportion of the average range of motion demonstrated in the neutral condition." However, given the range of motion before feeling pain is 1 for each participant under the neutral (pain gain = 1) condition, I *assume the data has already been normalized.*
 
 Assumption 2: The paper speaks of "participant’s average movement-evoked pain for each condition." As such, I assume that I need to average the left & right (e.g. direction of rotation 1 & 2).
+
+### Descriptive statistics
 
 ```{r Average by condition}
 
@@ -103,26 +112,65 @@ d.comparison <- d %>%
     gather(condition,rangeofmotion,starts_with("mean")) %>%
     group_by(condition) %>%
     summarise(meanrangeofmotion = mean(rangeofmotion))
+  
+  
+```
+
+
+```{r Means}
+
+mean0.8 <- mean(d.comparison$meancondition1_gain0.8)
+mean1 <- mean(d.comparison$meancondition2_gain1)
+mean1.2 <- mean(d.comparison$meancondition3_gain1.2)
+
+pctchng0.8v1 <- 100*((mean0.8-mean1)/mean1)
+pctchng1.2v1 <- 100*((mean1.2-mean1)/mean1)
 
 ```
 
-### Descriptive statistics
 
-```{r}
+```{r Standard deviations}
+
+
+sd0.8 <- sd(d.comparison$meancondition1_gain0.8) 
+sd1 <- sd(d.comparison$meancondition2_gain1) 
+sd1.2 <- sd(d.comparison$meancondition3_gain1.2) 
+
+sdpool0.8v1 <- sqrt((sd0.8**2 + sd1**2)/2)
+
+sdpool1v1.2 <- sqrt((sd1.2**2 + sd1**2)/2)
+
 
 ```
+
 
 ### Inferential statistics
 
-```{r Repeated Measuers ANOVA}
+```{r Repeated Measures ANOVA}
 
-modANOVA <- ezANOVA(data = d.tidy,
+#Version 1
+
+modANOVA.1 <- ezANOVA(data = d.tidy.1,
                   dv = rangeofmotion,
                   wid = Participant,
                   within = .(condition),
+                  within_full = DirectionofRotation, #use this so the condition data is collapsed to mean of DirectionofRotation; becuase observations are the same, I think it's fine; https://groups.google.com/forum/#!topic/ez4r/e1MoQc06F4o
+                  detailed = TRUE,
+                  return_aov = TRUE) #returns aov object, which is useful for calculating partial eta squared
+
+print(modANOVA.1)
+
+
+#Version 2
+
+modANOVA.2 <- ezANOVA(data = d.tidy.2,
+                  dv = rangeofmotion,
+                  wid = trial,
+                  within = .(condition),
                   detailed = TRUE)
 
-print(modANOVA)
+print(modANOVA.2)
+
 
 #demoAnova <- ezANOVA(myData, # specify data frame
 #                     dv = RT, # specify dependent variable 
@@ -136,6 +184,33 @@ print(modANOVA)
 
 ```
 
+```{r Effect Size}
+
+d0.8v1 <- (mean0.8 - mean1) / sdpool0.8v1
+
+d1v1.2 <- (mean1.2 - mean1) / sdpool1v1.2
+
+print(d0.8v1) #when vision understated motion, hence range of motion increased
+print(d1v1.2) #when vision overstated motion, hence range of motion decreased
+
+```
+
+```{r Confidence Intervals}
+
+t.test0.8v1 <- t.test(d.comparison$meancondition1_gain0.8,d.comparison$meancondition2_gain1)$conf.int
+t.test1.2v1 <- t.test(d.comparison$meancondition2_gain1,d.comparison$meancondition3_gain1.2)$conf.int
+
+#Vision understated true rotation
+pctchng0.8v1
+t.test0.8v1
+
+#Vision overstated true rotation
+pctchng1.2v1
+t.test1.2v1
+
+```
+
+
 ```{r T tests}
 
 #T-test by condition
@@ -144,11 +219,11 @@ ttest_0.8v1 <- t.test(d.comparison$meancondition1_gain0.8, d.comparison$meancond
 
 ttest_0.8v1.2 <- t.test(d.comparison$meancondition1_gain0.8, d.comparison$meancondition3_gain1.2, paired = TRUE)
 
-ttest_1v1.2 <- t.test(d.comparison$meancondition2_gain1, d.comparison$meancondition3_gain1.2, paired = TRUE)
+ttest_1.2v1 <- t.test(d.comparison$meancondition2_gain1, d.comparison$meancondition3_gain1.2, paired = TRUE)
 
 print(ttest_0.8v1)
 print(ttest_0.8v1.2)
-print(ttest_1v1.2)
+print(ttest_1.2v1)
 
 ```
 
@@ -160,6 +235,7 @@ cohen.d(d.comparison$meancondition1_gain0.8)
 
 cohen.d(d.comparison$meancondition2_gain1, d.comparison$meancondition3_gain1.2)
 
+comput
 
 ```
 
