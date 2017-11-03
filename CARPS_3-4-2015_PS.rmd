@@ -4,6 +4,7 @@ output:
   html_document:
     toc: true
     toc_float: true
+   
 ---
 
 #### Article ID: CARPS_3-4-2015_PS
@@ -61,9 +62,10 @@ d <- read.table("data/Bogus visual feedback alters movement_Data.tab", header=TR
 
 ## Step 3: Tidy data
 
-```{r Tidy data}
+I tidied the data in two ways. First, I gathered by condition. However, when I ran the repeated measures of variance, the F stat and degrees of freedom were different (46 vs. 94). And so I tested another method -- I made each direction of rotation per participant per condition a separate trail. This gave a slightly higher F stat, but still wrong. I have commented out this second version.
 
-#Tidy 1 -- tidying across condition
+
+```{r Tidy data}
 
 d.tidy.1 <- d %>%
   gather(condition,rangeofmotion,starts_with("condition")) #the value various condition columns contains are the range of motion
@@ -72,15 +74,15 @@ d.tidy.1$Participant <- as.factor(d.tidy.1$Participant)
 d.tidy.1$condition <- as.factor(d.tidy.1$condition)
 
 
-#Tidy 2 -- testing hypothesis of looking at participant per direction as a separate trial
+#[For reference] Tidy 2 -- testing hypothesis of looking at participant per direction as a separate trial
 
-d.tidy.2 <- d %>%
-  mutate(trial = Participant * DirectionofRotation) %>% # creates a separate row at a participation * rotation
-  select(-Participant,-DirectionofRotation) %>%
-  gather(condition,rangeofmotion,starts_with("condition")) 
-  
-d.tidy.2$trial <- as.factor(d.tidy.2$trial)
-d.tidy.2$condition <- as.factor(d.tidy.2$condition)
+# d.tidy.2 <- d %>%
+#   mutate(trial = Participant * DirectionofRotation) %>% # creates a separate row at a participation * rotation
+#   select(-Participant,-DirectionofRotation) %>%
+#   gather(condition,rangeofmotion,starts_with("condition")) 
+#   
+# d.tidy.2$trial <- as.factor(d.tidy.2$trial)
+# d.tidy.2$condition <- as.factor(d.tidy.2$condition)
 
 ```
 
@@ -88,15 +90,9 @@ d.tidy.2$condition <- as.factor(d.tidy.2$condition)
 
 ### Pre-processing
 
-Assumption 1: The paper indicates that the data needs to be normalized: "To account for between-subject differences in range of motion, we transformed data for each participant to a proportion of the average range of motion demonstrated in the neutral condition." However, given the range of motion before feeling pain is 1 for each participant under the neutral (pain gain = 1) condition, I *assume the data has already been normalized.*
-
-Assumption 2: The paper speaks of "participant’s average movement-evoked pain for each condition." As such, I assume that I need to average the left & right (e.g. direction of rotation 1 & 2).
-
-### Descriptive statistics
+1) I want to create a tidy table that groups by participant and averages across direction of rotation (e.g. left or right).
 
 ```{r Average by condition}
-
-#For T tests
 
 d.comparison <- d %>%
   group_by(Participant) %>%
@@ -105,17 +101,13 @@ d.comparison <- d %>%
             meancondition3_gain1.2 = mean(Condition3_Gain1.2)
               )
   
-  
-#For comparing means
-
-  d.simplified <- d.comparison %>%
-    gather(condition,rangeofmotion,starts_with("mean")) %>%
-    group_by(condition) %>%
-    summarise(meanrangeofmotion = mean(rangeofmotion))
-  
-  
 ```
 
+
+### Descriptive statistics
+
+
+1) I want to find the means per condition.
 
 ```{r Means}
 
@@ -123,11 +115,10 @@ mean0.8 <- mean(d.comparison$meancondition1_gain0.8)
 mean1 <- mean(d.comparison$meancondition2_gain1)
 mean1.2 <- mean(d.comparison$meancondition3_gain1.2)
 
-pctchng0.8v1 <- 100*((mean0.8-mean1)/mean1)
-pctchng1.2v1 <- 100*((mean1.2-mean1)/mean1)
-
 ```
 
+
+2) I want to find the standard deviations
 
 ```{r Standard deviations}
 
@@ -146,30 +137,34 @@ sdpool1v1.2 <- sqrt((sd1.2**2 + sd1**2)/2)
 
 ### Inferential statistics
 
-```{r Repeated Measures ANOVA}
+First, I attempt to re-create the repeated measures anova. We find that the F statistic had a major numerical error, but the p values matched (note both were p < 0.001, and noted as p = 0.001). In addition, please note that there were 94 degrees of freedom listed in the original paper, but only 46 here. Finally, I could not figure out how to calculate partial eta squared after ~30 minutes of searching.
 
-#Version 1
+Original Text: "The repeated measures ANOVA revealed a large overall effect of visual-proprioceptive feedback (condition) on pain-free range of motion F(2, 94) = 18.9, p < .001, p 2 = 0.29."
+
+```{r Repeated Measures ANOVA}
 
 modANOVA.1 <- ezANOVA(data = d.tidy.1,
                   dv = rangeofmotion,
                   wid = Participant,
                   within = .(condition),
-                  within_full = DirectionofRotation, #use this so the condition data is collapsed to mean of DirectionofRotation; becuase observations are the same, I think it's fine; https://groups.google.com/forum/#!topic/ez4r/e1MoQc06F4o
+                  within_full = DirectionofRotation, 
                   detailed = TRUE,
                   return_aov = TRUE) #returns aov object, which is useful for calculating partial eta squared
 
 print(modANOVA.1)
 
+#Note on within_full: this so the condition data is collapsed to mean of DirectionofRotation; becuase observations are the same, I think it's fine; https://groups.google.com/forum/#!topic/ez4r/e1MoQc06F4o
 
-#Version 2
 
-modANOVA.2 <- ezANOVA(data = d.tidy.2,
-                  dv = rangeofmotion,
-                  wid = trial,
-                  within = .(condition),
-                  detailed = TRUE)
-
-print(modANOVA.2)
+# #Version 2
+# 
+# modANOVA.2 <- ezANOVA(data = d.tidy.2,
+#                   dv = rangeofmotion,
+#                   wid = trial,
+#                   within = .(condition),
+#                   detailed = TRUE)
+# 
+# print(modANOVA.2)
 
 
 #demoAnova <- ezANOVA(myData, # specify data frame
@@ -184,18 +179,103 @@ print(modANOVA.2)
 
 ```
 
-```{r Effect Size}
+```{r Repeated ANOVA Compared Values}
+
+repanova.fstat.comp <- compareValues(reportedValue = 18.9, obtainedValue = 13.92793)
+
+repanova.pval.comp <- compareValues(reportedValue = .001, obtainedValue = .001, isP=T)
+
+
+repanova.fstat.comp
+repanova.pval.comp
+
+
+
+```
+
+2) Second, I look at all pairwise compairsons. Since the methodology was not mentioned (e.g. either F-statistic comparisons or t tests), I used t-tests. All were the same, e.g. ; < 0.01.
+
+Original text: "All pairwise comparisons were significant (ps < .01)."
+
+```{r T tests}
+
+#T-test by condition
+
+ttest_0.8v1 <- t.test(d.comparison$meancondition1_gain0.8, d.comparison$meancondition2_gain1, paired = TRUE)
+
+ttest_0.8v1.2 <- t.test(d.comparison$meancondition1_gain0.8, d.comparison$meancondition3_gain1.2, paired = TRUE)
+
+ttest_1.2v1 <- t.test(d.comparison$meancondition2_gain1, d.comparison$meancondition3_gain1.2, paired = TRUE)
+
+ttest_0.8v1
+ttest_0.8v1.2
+ttest_1.2v1
+
+```
+
+```{r Pairwise Findings}
+
+pairwise.1 <- compareValues(reportedValue = .01, obtainedValue = .01, isP=T)
+
+pairwise.2 <- compareValues(reportedValue = .01, obtainedValue = .01, isP=T)
+
+pairwise.3 <- compareValues(reportedValue = .01, obtainedValue = .01, isP=T)
+
+
+pairwise.1
+pairwise.2
+pairwise.3
+
+```
+
+3) Third, I compare effect sizes and related p values. The effect sizes and associated p values were all wrong.
+
+Original Effect: 
+"As shown in Figure 3, when vision understated true rotation, pain-free range of motion was increased, and this was a medium-sized effect, p = .006, d = 0.67; when vision overstated true rotation, pain-free range of motion was decreased, and this was a large effect, p = .001, d = 0.80."
+
+```{r Effect Size and Corresponding T Tests (again)}
 
 d0.8v1 <- (mean0.8 - mean1) / sdpool0.8v1
+
 
 d1v1.2 <- (mean1.2 - mean1) / sdpool1v1.2
 
 print(d0.8v1) #when vision understated motion, hence range of motion increased
+ttest_0.8v1
 print(d1v1.2) #when vision overstated motion, hence range of motion decreased
+ttest_1.2v1
 
 ```
 
-```{r Confidence Intervals}
+```{r Effect Size and P Value Findings}
+
+understatement.effectsize <- compareValues(reportedValue = .67, obtainedValue = .89)
+
+understatement.pvalue <- compareValues(reportedValue = .006, obtainedValue = .0049, isP=T)
+
+overstatement.effectsize <- compareValues(reportedValue = .8, obtainedValue = 1.0042, isP=T)
+
+overstatement.pvalue <- compareValues(reportedValue = .001, obtainedValue = .002, isP=T)
+
+
+
+understatement.effectsize
+understatement.pvalue
+overstatement.effectsize
+overstatement.pvalue
+
+
+```
+
+4) Fourth, I compare the percentage change and confidence intervals. The percentage change for the understatement was off, but the percentage change for the overstatement was right. 
+
+Original quote: "Specifically, during visual feedback that understated true rotation, pain-free range of motion was increased by 6% (95% confidence interval, or CI = [2%, 11%]); during visual feedback that overstated true rotation, pain-free range of motion decreased by 7% (95% CI = [3%, 11%]). Therefore, our results show an overall effect of the manipulation of 13%.""
+
+```{r Percentage Change and Confidence Intervals}
+
+pctchng0.8v1 <- 100*((mean0.8-mean1)/mean1)
+pctchng1.2v1 <- 100*((mean1.2-mean1)/mean1)
+pctchngtotal <- abs(pctchng0.8v1) + abs(pctchng1.2v1)
 
 t.test0.8v1 <- t.test(d.comparison$meancondition1_gain0.8,d.comparison$meancondition2_gain1)$conf.int
 t.test1.2v1 <- t.test(d.comparison$meancondition2_gain1,d.comparison$meancondition3_gain1.2)$conf.int
@@ -208,37 +288,31 @@ t.test0.8v1
 pctchng1.2v1
 t.test1.2v1
 
-```
-
-
-```{r T tests}
-
-#T-test by condition
-
-ttest_0.8v1 <- t.test(d.comparison$meancondition1_gain0.8, d.comparison$meancondition2_gain1, paired = TRUE)
-
-ttest_0.8v1.2 <- t.test(d.comparison$meancondition1_gain0.8, d.comparison$meancondition3_gain1.2, paired = TRUE)
-
-ttest_1.2v1 <- t.test(d.comparison$meancondition2_gain1, d.comparison$meancondition3_gain1.2, paired = TRUE)
-
-print(ttest_0.8v1)
-print(ttest_0.8v1.2)
-print(ttest_1.2v1)
+pctchngtotal
 
 ```
 
+```{r Confidence Interval Findings}
 
-```{r Comparison of effect sized}
+understatement.pctchng <- compareValues(reportedValue = 6, obtainedValue = 6.54)
+understatement.confidence.lower <- compareValues(reportedValue = 2, obtainedValue = 2.18)
+understatement.confidence.upper <- compareValues(reportedValue = 11, obtainedValue = 10.89)
 
+overstatement.pctchng <- compareValues(reportedValue = 7, obtainedValue = 6.875)
+overstatement.confidence.lower <- compareValues(reportedValue = 3, obtainedValue = 2.79)
+overstatement.confidence.upper <- compareValues(reportedValue = 11, obtainedValue = 10.96)
 
-cohen.d(d.comparison$meancondition1_gain0.8)
+pctchngtotal <- compareValues(reportedValue = 13, obtainedValue = 13.42)
 
-cohen.d(d.comparison$meancondition2_gain1, d.comparison$meancondition3_gain1.2)
-
-comput
+understatement.pctchng
+understatement.confidence.lower
+understatement.confidence.upper
+overstatement.pctchng
+overstatement.confidence.lower
+overstatement.confidence.upper
+pctchngtotal
 
 ```
-
 
 ## Step 5: Conclusion
 
