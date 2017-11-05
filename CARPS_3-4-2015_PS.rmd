@@ -48,7 +48,7 @@ library(CARPSreports) # custom report functions
 library(ez) # for repeated ANOVAs
 library(effsize) #for effect size
 library(compute.es) #for effect size
-library(lsr) #for partial eta squared
+library(lsr) #for cohen's d
 ```
 
 
@@ -56,7 +56,7 @@ library(lsr) #for partial eta squared
 
 ```{r Load data}
 
-d <- read.table("data/Bogus visual feedback alters movement_Data.tab", header=TRUE)
+d <- read.table("data/Bogus visual feedback alters movement_Data.tab", header=TRUE) #need header to be true
 
 ```
 
@@ -111,29 +111,13 @@ d.comparison <- d %>%
 
 ```{r Means}
 
-mean0.8 <- mean(d.comparison$meancondition1_gain0.8)
-mean1 <- mean(d.comparison$meancondition2_gain1)
-mean1.2 <- mean(d.comparison$meancondition3_gain1.2)
+mean0.8 <- mean(d$Condition1_Gain0.8)
+mean1 <- mean(d$Condition2_Gain1)
+mean1.2 <- mean(d$Condition3_Gain1.2)
 
-```
-
-
-2) I want to find the standard deviations
-
-```{r Standard deviations}
-
-
-sd0.8 <- sd(d.comparison$meancondition1_gain0.8) 
-sd1 <- sd(d.comparison$meancondition2_gain1) 
-sd1.2 <- sd(d.comparison$meancondition3_gain1.2) 
-
-sdpool0.8v1 <- sqrt((sd0.8**2 + sd1**2)/2)
-
-sdpool1v1.2 <- sqrt((sd1.2**2 + sd1**2)/2)
 
 
 ```
-
 
 ### Inferential statistics
 
@@ -199,19 +183,16 @@ Original text: "All pairwise comparisons were significant (ps < .01)."
 
 ```{r T tests}
 
-#T-test by condition
-
-ttest_0.8v1 <- t.test(d.comparison$meancondition1_gain0.8, d.comparison$meancondition2_gain1, paired = TRUE)
-
-ttest_0.8v1.2 <- t.test(d.comparison$meancondition1_gain0.8, d.comparison$meancondition3_gain1.2, paired = TRUE)
-
-ttest_1.2v1 <- t.test(d.comparison$meancondition2_gain1, d.comparison$meancondition3_gain1.2, paired = TRUE)
+ttest0.8v1 <- t.test(d$Condition1_Gain0.8, d$Condition2_Gain1, paired = TRUE)
+ttest0.8v1.2 <- t.test(d$Condition1_Gain0.8, d$Condition3_Gain1.2, paired = TRUE)
+ttest1.2v1 <- t.test(d$Condition3_Gain1.2, d$Condition2_Gain1, paired = TRUE)
 
 ttest_0.8v1
 ttest_0.8v1.2
 ttest_1.2v1
 
 ```
+
 
 ```{r Pairwise Findings}
 
@@ -228,34 +209,47 @@ pairwise.3
 
 ```
 
-3) Third, I compare effect sizes and related p values. The effect sizes and associated p values were all wrong.
 
-Original Effect: 
+3) Third, I compare effect sizes and related p values. While the effect sizes were right the p values had major numerical errors; that said, there was no change in inference of stasticial power. In other words, the difference between
+
+Original Text: 
 "As shown in Figure 3, when vision understated true rotation, pain-free range of motion was increased, and this was a medium-sized effect, p = .006, d = 0.67; when vision overstated true rotation, pain-free range of motion was decreased, and this was a large effect, p = .001, d = 0.80."
 
-```{r Effect Size and Corresponding T Tests (again)}
 
-d0.8v1 <- (mean0.8 - mean1) / sdpool0.8v1
+```{r Effect size and Corresponding T Tests to Get P Values}
+
+#Normal, using original data set
+
+d0.8v1 <- cohensD(d$Condition1_Gain0.8, d$Condition2_Gain1) # vision understating true rotation
+
+d1v1.2 <- cohensD(d$Condition3_Gain1.2, d$Condition2_Gain1) # vision overstating true rotation
 
 
-d1v1.2 <- (mean1.2 - mean1) / sdpool1v1.2
+# #Consolidate by area (aka by means)
+# d0.8v1.consolidated <- cohensD(d.comparison$meancondition1_gain0.8, d.comparison$meancondition2_gain1)
+# d1v1.2.consolidated <- cohensD(d.comparison$meancondition3_gain1.2, d.comparison$meancondition2_gain1)
 
-print(d0.8v1) #when vision understated motion, hence range of motion increased
+
+d0.8v1
 ttest_0.8v1
-print(d1v1.2) #when vision overstated motion, hence range of motion decreased
+d1v1.2
 ttest_1.2v1
+
+
 
 ```
 
+
+
 ```{r Effect Size and P Value Findings}
 
-understatement.effectsize <- compareValues(reportedValue = .67, obtainedValue = .89)
+understatement.effectsize <- compareValues(reportedValue = .67, obtainedValue = .6663313)
 
-understatement.pvalue <- compareValues(reportedValue = .006, obtainedValue = .0049, isP=T)
+understatement.pvalue <- compareValues(reportedValue = .006, obtainedValue = .004961, isP=T)
 
-overstatement.effectsize <- compareValues(reportedValue = .8, obtainedValue = 1.0042, isP=T)
+overstatement.effectsize <- compareValues(reportedValue = .8, obtainedValue = 0.7959338, isP=T)
 
-overstatement.pvalue <- compareValues(reportedValue = .001, obtainedValue = .002, isP=T)
+overstatement.pvalue <- compareValues(reportedValue = .001, obtainedValue = .002027, isP=T)
 
 
 
@@ -267,18 +261,18 @@ overstatement.pvalue
 
 ```
 
-4) Fourth, I compare the percentage change and confidence intervals. The percentage change for the understatement was off, but the percentage change for the overstatement was right. 
+4) Fourth, I compare the percentage change and confidence intervals. The percentage change for the understatement (e.g. 0.8 vs 1) had a major numerical error, and the confidence interval for the overstatement had a minor numerical error. Overall, however, the same effects were seen.
 
 Original quote: "Specifically, during visual feedback that understated true rotation, pain-free range of motion was increased by 6% (95% confidence interval, or CI = [2%, 11%]); during visual feedback that overstated true rotation, pain-free range of motion decreased by 7% (95% CI = [3%, 11%]). Therefore, our results show an overall effect of the manipulation of 13%.""
 
 ```{r Percentage Change and Confidence Intervals}
 
 pctchng0.8v1 <- 100*((mean0.8-mean1)/mean1)
-pctchng1.2v1 <- 100*((mean1.2-mean1)/mean1)
+pctchng1.2v1 <- -100*((mean1.2-mean1)/mean1) #use negative 100 as this direction will be lower
 pctchngtotal <- abs(pctchng0.8v1) + abs(pctchng1.2v1)
 
-t.test0.8v1 <- t.test(d.comparison$meancondition1_gain0.8,d.comparison$meancondition2_gain1)$conf.int
-t.test1.2v1 <- t.test(d.comparison$meancondition2_gain1,d.comparison$meancondition3_gain1.2)$conf.int
+t.test0.8v1 <- t.test(d$Condition1_Gain0.8,d$Condition2_Gain1)$conf.int
+t.test1.2v1 <- t.test(d$Condition2_Gain1,d$Condition3_Gain1.2)$conf.int
 
 #Vision understated true rotation
 pctchng0.8v1
@@ -294,15 +288,15 @@ pctchngtotal
 
 ```{r Confidence Interval Findings}
 
-understatement.pctchng <- compareValues(reportedValue = 6, obtainedValue = 6.54)
-understatement.confidence.lower <- compareValues(reportedValue = 2, obtainedValue = 2.18)
-understatement.confidence.upper <- compareValues(reportedValue = 11, obtainedValue = 10.89)
+understatement.pctchng <- compareValues(reportedValue = 6, obtainedValue = 6.541667)
+understatement.confidence.lower <- compareValues(reportedValue = 2, obtainedValue = 2.510187)
+understatement.confidence.upper <- compareValues(reportedValue = 11, obtainedValue = 10.573147)
 
 overstatement.pctchng <- compareValues(reportedValue = 7, obtainedValue = 6.875)
-overstatement.confidence.lower <- compareValues(reportedValue = 3, obtainedValue = 2.79)
-overstatement.confidence.upper <- compareValues(reportedValue = 11, obtainedValue = 10.96)
+overstatement.confidence.lower <- compareValues(reportedValue = 3, obtainedValue = 3.327993)
+overstatement.confidence.upper <- compareValues(reportedValue = 11, obtainedValue = 10.422007)
 
-pctchngtotal <- compareValues(reportedValue = 13, obtainedValue = 13.42)
+pctchngtotal <- compareValues(reportedValue = 13, obtainedValue = 13.41667)
 
 understatement.pctchng
 understatement.confidence.lower
