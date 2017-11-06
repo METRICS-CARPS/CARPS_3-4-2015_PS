@@ -230,18 +230,18 @@ div.tocify {
 <div id="start-date-10312017" class="section level4">
 <h4>Start date: 10/31/2017</h4>
 </div>
-<div id="end-date-insert-end-date---use-us-format" class="section level4">
-<h4>End date: [Insert end date - use US format]</h4>
+<div id="end-date-1152017" class="section level4">
+<h4>End date: 11/5/2017</h4>
 <hr />
 </div>
 <div id="methods-summary" class="section level4">
 <h4>Methods summary:</h4>
-<p>[Write a brief summary of the methods underlying the target outcomes written in your own words]</p>
+<p>This paper tested the effects of proprioceptive information – aka our sense of body movement – on pain; the outstanding theories on pain up to that point had covered nocioception, or internal-stimuli. To examine the effects of perception on pain, participants wore a virtual reality headset while rotating their heads until they felt pain; the distance between the center and where they felt pain as measured by degrees, the “pain-free range of motion”, was the main dependent variable. Participants rotated their head to the left and to the right for 3 conditions: perceived movement understated true movement (e.g. gain = 0.8, or virtual rotation was 80% of actual rotation), was the same as true movement (e.g. gain = 1, or 100% of actual rotation), or overstated true movement (e.g. gain = 1.2, or virutal rotation was 120% of actual rotation). The order in which participants experienced the conditions was counterbalanced. To minimize the detection of virtual reality manipulation, participants were exposed to a different visual scene for each of the 6 trials (3 conditions * 2 directions of rotation). The participants and experimenters were blinded. Finally, there were two “manipulation checks”: the first piloted 9 healthy participants to find the ranges within which participants would not be able to determine virtual reality manipulation, and the second assessed the quality check of the machine.</p>
 <hr />
 </div>
 <div id="target-outcomes" class="section level4">
 <h4>Target outcomes:</h4>
-<p>[Insert the target outcomes identified in targetOutcomes.md]</p>
+<p>The repeated measures ANOVA revealed a large overall effect of visual-proprioceptive feedback (condition) on pain-free range of motion F(2, 94) = 18.9, p &lt; .001, η·p2 = 0.29. All pairwise comparisons were significant (ps &lt; .01). As shown in Figure 3, when vision understated true rotation, pain-free range of motion was increased, and this was a medium-sized effect, p = .006, d = 0.67; when vision overstated true rotation, pain-free range of motion was decreased, and this was a large effect, p = .001, d = 0.80. Specifically, during visual feedback that understated true rotation, pain-free range of motion was increased by 6% (95% confidence interval, or CI = [2%, 11%]); during visual feedback that overstated true rotation, pain-free range of motion decreased by 7% (95% CI = [3%, 11%]). Therefore, our results show an overall effect of the manipulation of 13%.</p>
 <hr />
 <p>[The chunk below sets up some formatting options for the R Markdown document]</p>
 </div>
@@ -256,39 +256,33 @@ library(CARPSreports) # custom report functions</code></pre>
 <pre class="r"><code>library(ez) # for repeated ANOVAs
 library(effsize) #for effect size
 library(compute.es) #for effect size
-library(lsr) #for partial eta squared</code></pre>
+library(lsr) #for cohen's d
+library(afex) #for effect sizes
+library(schoRsch)</code></pre>
 </div>
 <div id="step-2-load-data" class="section level2">
 <h2>Step 2: Load data</h2>
-<pre class="r"><code>d &lt;- read.table(&quot;data/Bogus visual feedback alters movement_Data.tab&quot;, header=TRUE)</code></pre>
+<pre class="r"><code>d &lt;- read.table(&quot;data/Bogus visual feedback alters movement_Data.tab&quot;, header=TRUE) #need header to be true</code></pre>
 </div>
 <div id="step-3-tidy-data" class="section level2">
 <h2>Step 3: Tidy data</h2>
-<p>I tidied the data in two ways. First, I gathered by condition. However, when I ran the repeated measures of variance, the F stat and degrees of freedom were different (46 vs. 94). And so I tested another method – I made each direction of rotation per participant per condition a separate trail. This gave a slightly higher F stat, but still wrong. I have commented out this second version.</p>
-<pre class="r"><code>d.tidy.1 &lt;- d %&gt;%
+<p>Here, I tidy the data and convert the variables needed in the ANOVA in a proper way.</p>
+<pre class="r"><code>#Create tidy data set
+
+d.tidy &lt;- d %&gt;%
   gather(condition,rangeofmotion,starts_with(&quot;condition&quot;)) #the value various condition columns contains are the range of motion
 
-d.tidy.1$Participant &lt;- as.factor(d.tidy.1$Participant)
-d.tidy.1$condition &lt;- as.factor(d.tidy.1$condition)
+#Need to convert following columns to proper type
 
-
-#[For reference] Tidy 2 -- testing hypothesis of looking at participant per direction as a separate trial
-
-# d.tidy.2 &lt;- d %&gt;%
-#   mutate(trial = Participant * DirectionofRotation) %&gt;% # creates a separate row at a participation * rotation
-#   select(-Participant,-DirectionofRotation) %&gt;%
-#   gather(condition,rangeofmotion,starts_with(&quot;condition&quot;)) 
-#   
-# d.tidy.2$trial &lt;- as.factor(d.tidy.2$trial)
-# d.tidy.2$condition &lt;- as.factor(d.tidy.2$condition)</code></pre>
+d.tidy$Participant &lt;- as.factor(d.tidy$Participant)
+d.tidy$condition &lt;- as.factor(d.tidy$condition)
+d.tidy$DirectionofRotation &lt;- as.numeric(d.tidy$DirectionofRotation)</code></pre>
 </div>
 <div id="step-4-run-analysis" class="section level2">
 <h2>Step 4: Run analysis</h2>
 <div id="pre-processing" class="section level3">
 <h3>Pre-processing</h3>
-<ol style="list-style-type: decimal">
-<li>I want to create a tidy table that groups by participant and averages across direction of rotation (e.g. left or right).</li>
-</ol>
+<p>1 – For reference, I want to create a tidy table that groups by participant and averages across direction of rotation (e.g. left or right).</p>
 <pre class="r"><code>d.comparison &lt;- d %&gt;%
   group_by(Participant) %&gt;%
   summarise(meancondition1_gain0.8 = mean(Condition1_Gain0.8),
@@ -298,53 +292,53 @@ d.tidy.1$condition &lt;- as.factor(d.tidy.1$condition)
 </div>
 <div id="descriptive-statistics" class="section level3">
 <h3>Descriptive statistics</h3>
-<ol style="list-style-type: decimal">
-<li>I want to find the means per condition.</li>
-</ol>
-<pre class="r"><code>mean0.8 &lt;- mean(d.comparison$meancondition1_gain0.8)
-mean1 &lt;- mean(d.comparison$meancondition2_gain1)
-mean1.2 &lt;- mean(d.comparison$meancondition3_gain1.2)</code></pre>
-<ol start="2" style="list-style-type: decimal">
-<li>I want to find the standard deviations</li>
-</ol>
-<pre class="r"><code>sd0.8 &lt;- sd(d.comparison$meancondition1_gain0.8) 
-sd1 &lt;- sd(d.comparison$meancondition2_gain1) 
-sd1.2 &lt;- sd(d.comparison$meancondition3_gain1.2) 
-
-sdpool0.8v1 &lt;- sqrt((sd0.8**2 + sd1**2)/2)
-
-sdpool1v1.2 &lt;- sqrt((sd1.2**2 + sd1**2)/2)</code></pre>
+<p>1 – I want to find the means per condition.</p>
+<pre class="r"><code>mean0.8 &lt;- mean(d$Condition1_Gain0.8)
+mean1 &lt;- mean(d$Condition2_Gain1)
+mean1.2 &lt;- mean(d$Condition3_Gain1.2)</code></pre>
 </div>
 <div id="inferential-statistics" class="section level3">
 <h3>Inferential statistics</h3>
-<p>First, I attempt to re-create the repeated measures anova. We find that the F statistic had a major numerical error, but the p values matched (note both were p &lt; 0.001, and noted as p = 0.001). In addition, please note that there were 94 degrees of freedom listed in the original paper, but only 46 here. Finally, I could not figure out how to calculate partial eta squared after ~30 minutes of searching.</p>
-<p>Original Text: “The repeated measures ANOVA revealed a large overall effect of visual-proprioceptive feedback (condition) on pain-free range of motion F(2, 94) = 18.9, p &lt; .001, p 2 = 0.29.”</p>
-<pre class="r"><code>modANOVA.1 &lt;- ezANOVA(data = d.tidy.1,
+<p>1 – I create a repeated measures ANOVa using condition as a within subjects variable, and DirectionofRotation as a between subjects variable. This achieves nearly the desired effect size and degrees of freedom, and the correct p value.</p>
+<p>I should note that I do not quite understand why DirectionofRotation is a between subjects variable; it seems like it should be another within variabe. However, doing this just yields 46 degrees of freedom.</p>
+<p>Finally, after much testing (some results displayed below), I could not figure out how to extract effect size from either the ezANOVA package or the aov_ez package. Note that the ezANOVA gives the eta squared, not partial degrees of freedom, which I think is theoretically the same as there is only one independent variable? However, I am not sure on the stats!</p>
+<p>Original Text: “The repeated measures ANOVA revealed a large overall effect of visual-proprioceptive feedback (condition) on pain-free range of motion F(2, 94) = 18.9, p &lt; .001, ηp 2 = 0.29.”</p>
+<pre class="r"><code>#Repeated Measures ANOVA 
+#Condition is within variable, and DirectionofRotation is the between variable; 
+
+modANOVA &lt;- ezANOVA(data = d.tidy,
                   dv = rangeofmotion,
                   wid = Participant,
                   within = .(condition),
-                  within_full = DirectionofRotation, 
+                  between = DirectionofRotation, 
                   detailed = TRUE,
-                  return_aov = TRUE) #returns aov object, which is useful for calculating partial eta squared
+                  return_aov = TRUE) #returns aov object, which is supposedly useful for calculating partial eta squared, but I could not figure out
 
-print(modANOVA.1)</code></pre>
+print(modANOVA)</code></pre>
 <pre><code>## $ANOVA
-##        Effect DFn DFd        SSn       SSd           F            p p&lt;.05
-## 1 (Intercept)   1  23 71.8400889 0.1033778 15983.33878 3.366327e-34     *
-## 2   condition   2  46  0.2160528 0.3567806    13.92793 1.864561e-05     *
-##         ges
-## 1 0.9936355
-## 2 0.3195049
+##                          Effect DFn DFd          SSn       SSd
+## 1                   (Intercept)   1  46 1.436802e+02 0.5190861
+## 2           DirectionofRotation   1  46 1.400278e-02 0.5190861
+## 3                     condition   2  92 4.321056e-01 1.0668889
+## 4 DirectionofRotation:condition   2  92 7.338889e-03 1.0668889
+##              F            p p&lt;.05         ges
+## 1 1.273255e+04 7.299748e-58     * 0.989082281
+## 2 1.240888e+00 2.710868e-01       0.008751858
+## 3 1.863067e+01 1.609466e-07     * 0.214117100
+## 4 3.164237e-01 7.295406e-01       0.004606053
 ## 
 ## $`Mauchly's Test for Sphericity`
-##      Effect         W            p p&lt;.05
-## 2 condition 0.4933248 0.0004211748     *
+##                          Effect         W            p p&lt;.05
+## 3                     condition 0.7247239 0.0007143033     *
+## 4 DirectionofRotation:condition 0.7247239 0.0007143033     *
 ## 
 ## $`Sphericity Corrections`
-##      Effect       GGe        p[GG] p[GG]&lt;.05       HFe        p[HF]
-## 2 condition 0.6637131 0.0002853589         * 0.6888482 0.0002324356
-##   p[HF]&lt;.05
-## 2         *
+##                          Effect       GGe        p[GG] p[GG]&lt;.05       HFe
+## 3                     condition 0.7841439 2.365222e-06         * 0.8069633
+## 4 DirectionofRotation:condition 0.7841439 6.763741e-01           0.8069633
+##          p[HF] p[HF]&lt;.05
+## 3 1.779009e-06         *
+## 4 6.827072e-01          
 ## 
 ## $aov
 ## 
@@ -356,34 +350,42 @@ print(modANOVA.1)</code></pre>
 ## Stratum 1: Participant
 ## 
 ## Terms:
-##                 Residuals
-## Sum of Squares  0.1033778
-## Deg. of Freedom        23
+##                 DirectionofRotation Residuals
+## Sum of Squares            0.0140028 0.5190861
+## Deg. of Freedom                   1        46
 ## 
-## Residual standard error: 0.06704242
+## Residual standard error: 0.1062284
+## 2 out of 3 effects not estimable
+## Estimated effects are balanced
 ## 
 ## Stratum 2: Participant:condition
 ## 
 ## Terms:
-##                 condition Residuals
-## Sum of Squares  0.2160528 0.3567806
-## Deg. of Freedom         2        46
+##                 condition DirectionofRotation:condition Residuals
+## Sum of Squares  0.4321056                     0.0073389 1.0668889
+## Deg. of Freedom         2                             2        92
 ## 
-## Residual standard error: 0.08806872
+## Residual standard error: 0.1076876
 ## Estimated effects may be unbalanced</code></pre>
-<pre class="r"><code>#Note on within_full: this so the condition data is collapsed to mean of DirectionofRotation; becuase observations are the same, I think it's fine; https://groups.google.com/forum/#!topic/ez4r/e1MoQc06F4o
+<pre class="r"><code>#Attempt to create with aov_ez; Problem: between subjects factor had repeating participant id's
+#aov_ez &lt;- aov_ez(&quot;Participant&quot;,&quot;rangeofmotion&quot;,d.tidy,between = c(&quot;DirectionofRotation&quot;),within=&quot;condition&quot;)
 
 
-# #Version 2
-# 
-# modANOVA.2 &lt;- ezANOVA(data = d.tidy.2,
+
+#Attempt to calculate partial eta squared; did not work
+#anova_out(ezout = modANOVA$aov$`Participant:condition`, print = TRUE,etasq = &quot;partial&quot;)
+
+
+#Reference (46 degrees of freedom)
+
+# modANOVA2 &lt;- ezANOVA(data = d.tidy,
 #                   dv = rangeofmotion,
-#                   wid = trial,
+#                   wid = Participant,
 #                   within = .(condition),
-#                   detailed = TRUE)
+#                   detailed = TRUE,
+#                   return_aov = TRUE) #returns aov object, which is useful for calculating partial eta squared
 # 
-# print(modANOVA.2)
-
+# print(modANOVA2)
 
 #demoAnova &lt;- ezANOVA(myData, # specify data frame
 #                     dv = RT, # specify dependent variable 
@@ -393,63 +395,61 @@ print(modANOVA.1)</code></pre>
 #                     )
 
 #Repeated ANOVA in R: http://sherifsoliman.com/2014/12/10/ANOVA_in_R/ ; https://www.r-statistics.com/2010/04/repeated-measures-anova-with-r-tutorials/</code></pre>
-<pre class="r"><code>repanova.fstat.comp &lt;- compareValues(reportedValue = 18.9, obtainedValue = 13.92793)
+<pre class="r"><code>repanova.fstat.comp &lt;- compareValues(reportedValue = 18.9, obtainedValue = 18.63067)
+
+repanova.dendegreesfreedom.comp &lt;- compareValues(reportedValue = 94, obtainedValue = 92)
 
 repanova.pval.comp &lt;- compareValues(reportedValue = .001, obtainedValue = .001, isP=T)
 
 
 repanova.fstat.comp</code></pre>
-<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (18.9) and the obtained value (13.9) differed by 26.46%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
+<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (18.9) and the obtained value (18.6) differed by 1.59%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
+<pre class="r"><code>repanova.dendegreesfreedom.comp</code></pre>
+<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (94) and the obtained value (92) differed by 2.13%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 <pre class="r"><code>repanova.pval.comp</code></pre>
 <pre><code>## [1] &quot;MATCH. The reported value (0.001) and the obtained value (0.001) differed by 0%. NB obtained value was rounded to 3 decimal places.&quot;</code></pre>
-<ol start="2" style="list-style-type: decimal">
-<li>Second, I look at all pairwise compairsons. Since the methodology was not mentioned (e.g. either F-statistic comparisons or t tests), I used t-tests. All were the same, e.g. ; &lt; 0.01.</li>
-</ol>
+<p>2 – Second, I look at all pairwise compairsons. Since the methodology was not mentioned (e.g. either F-statistic comparisons or t tests), I used t-tests. All were the same, e.g. ; &lt; 0.01.</p>
 <p>Original text: “All pairwise comparisons were significant (ps &lt; .01).”</p>
-<pre class="r"><code>#T-test by condition
+<pre class="r"><code>ttest0.8v1 &lt;- t.test(d$Condition1_Gain0.8, d$Condition2_Gain1, paired = TRUE)
+ttest0.8v1.2 &lt;- t.test(d$Condition1_Gain0.8, d$Condition3_Gain1.2, paired = TRUE)
+ttest1.2v1 &lt;- t.test(d$Condition3_Gain1.2, d$Condition2_Gain1, paired = TRUE)
 
-ttest_0.8v1 &lt;- t.test(d.comparison$meancondition1_gain0.8, d.comparison$meancondition2_gain1, paired = TRUE)
-
-ttest_0.8v1.2 &lt;- t.test(d.comparison$meancondition1_gain0.8, d.comparison$meancondition3_gain1.2, paired = TRUE)
-
-ttest_1.2v1 &lt;- t.test(d.comparison$meancondition2_gain1, d.comparison$meancondition3_gain1.2, paired = TRUE)
-
-ttest_0.8v1</code></pre>
+ttest0.8v1</code></pre>
 <pre><code>## 
 ##  Paired t-test
 ## 
-## data:  d.comparison$meancondition1_gain0.8 and d.comparison$meancondition2_gain1
-## t = 3.1073, df = 23, p-value = 0.004961
+## data:  d$Condition1_Gain0.8 and d$Condition2_Gain1
+## t = 3.2643, df = 47, p-value = 0.00205
 ## alternative hypothesis: true difference in means is not equal to 0
 ## 95 percent confidence interval:
-##  0.02186668 0.10896665
+##  0.02510187 0.10573147
 ## sample estimates:
 ## mean of the differences 
 ##              0.06541667</code></pre>
-<pre class="r"><code>ttest_0.8v1.2</code></pre>
+<pre class="r"><code>ttest0.8v1.2</code></pre>
 <pre><code>## 
 ##  Paired t-test
 ## 
-## data:  d.comparison$meancondition1_gain0.8 and d.comparison$meancondition3_gain1.2
-## t = 4.0354, df = 23, p-value = 0.0005152
+## data:  d$Condition1_Gain0.8 and d$Condition3_Gain1.2
+## t = 5.0139, df = 47, p-value = 0.000008025
 ## alternative hypothesis: true difference in means is not equal to 0
 ## 95 percent confidence interval:
-##  0.06538871 0.20294462
+##  0.08033498 0.18799835
 ## sample estimates:
 ## mean of the differences 
 ##               0.1341667</code></pre>
-<pre class="r"><code>ttest_1.2v1</code></pre>
+<pre class="r"><code>ttest1.2v1</code></pre>
 <pre><code>## 
 ##  Paired t-test
 ## 
-## data:  d.comparison$meancondition2_gain1 and d.comparison$meancondition3_gain1.2
-## t = 3.4794, df = 23, p-value = 0.002027
+## data:  d$Condition3_Gain1.2 and d$Condition2_Gain1
+## t = -3.8993, df = 47, p-value = 0.0003054
 ## alternative hypothesis: true difference in means is not equal to 0
 ## 95 percent confidence interval:
-##  0.02787523 0.10962477
+##  -0.10422007 -0.03327993
 ## sample estimates:
 ## mean of the differences 
-##                 0.06875</code></pre>
+##                -0.06875</code></pre>
 <pre class="r"><code>pairwise.1 &lt;- compareValues(reportedValue = .01, obtainedValue = .01, isP=T)
 
 pairwise.2 &lt;- compareValues(reportedValue = .01, obtainedValue = .01, isP=T)
@@ -463,102 +463,105 @@ pairwise.1</code></pre>
 <pre><code>## [1] &quot;MATCH. The reported value (0.01) and the obtained value (0.01) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
 <pre class="r"><code>pairwise.3</code></pre>
 <pre><code>## [1] &quot;MATCH. The reported value (0.01) and the obtained value (0.01) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
-<ol start="3" style="list-style-type: decimal">
-<li>Third, I compare effect sizes and related p values. The effect sizes and associated p values were all wrong.</li>
-</ol>
-<p>Original Effect: “As shown in Figure 3, when vision understated true rotation, pain-free range of motion was increased, and this was a medium-sized effect, p = .006, d = 0.67; when vision overstated true rotation, pain-free range of motion was decreased, and this was a large effect, p = .001, d = 0.80.”</p>
-<pre class="r"><code>d0.8v1 &lt;- (mean0.8 - mean1) / sdpool0.8v1
+<p>3 – Third, I compare effect sizes and related p values. While the effect sizes were right the p values had major numerical errors; that said, there was no change in inference of stasticial power. In other words, there was a stastically significant difference between understating and normal as well as between overstating and normal</p>
+<p>Original Text: “As shown in Figure 3, when vision understated true rotation, pain-free range of motion was increased, and this was a medium-sized effect, p = .006, d = 0.67; when vision overstated true rotation, pain-free range of motion was decreased, and this was a large effect, p = .001, d = 0.80.”</p>
+<pre class="r"><code>#Effect Size
+
+d0.8v1 &lt;- cohensD(d$Condition1_Gain0.8, d$Condition2_Gain1) # vision understating true rotation
+
+d1v1.2 &lt;- cohensD(d$Condition3_Gain1.2, d$Condition2_Gain1) # vision overstating true rotation
 
 
-d1v1.2 &lt;- (mean1.2 - mean1) / sdpool1v1.2
+# FOR REFERENCE -- Consolidate by area (aka by means)
+# d0.8v1.consolidated &lt;- cohensD(d.comparison$meancondition1_gain0.8, d.comparison$meancondition2_gain1)
+# d1v1.2.consolidated &lt;- cohensD(d.comparison$meancondition3_gain1.2, d.comparison$meancondition2_gain1)
 
-print(d0.8v1) #when vision understated motion, hence range of motion increased</code></pre>
-<pre><code>## [1] 0.8970123</code></pre>
-<pre class="r"><code>ttest_0.8v1</code></pre>
+
+d0.8v1</code></pre>
+<pre><code>## [1] 0.6663313</code></pre>
+<pre class="r"><code>ttest0.8v1</code></pre>
 <pre><code>## 
 ##  Paired t-test
 ## 
-## data:  d.comparison$meancondition1_gain0.8 and d.comparison$meancondition2_gain1
-## t = 3.1073, df = 23, p-value = 0.004961
+## data:  d$Condition1_Gain0.8 and d$Condition2_Gain1
+## t = 3.2643, df = 47, p-value = 0.00205
 ## alternative hypothesis: true difference in means is not equal to 0
 ## 95 percent confidence interval:
-##  0.02186668 0.10896665
+##  0.02510187 0.10573147
 ## sample estimates:
 ## mean of the differences 
 ##              0.06541667</code></pre>
-<pre class="r"><code>print(d1v1.2) #when vision overstated motion, hence range of motion decreased</code></pre>
-<pre><code>## [1] -1.00442</code></pre>
-<pre class="r"><code>ttest_1.2v1</code></pre>
+<pre class="r"><code>d1v1.2</code></pre>
+<pre><code>## [1] 0.7959338</code></pre>
+<pre class="r"><code>ttest1.2v1</code></pre>
 <pre><code>## 
 ##  Paired t-test
 ## 
-## data:  d.comparison$meancondition2_gain1 and d.comparison$meancondition3_gain1.2
-## t = 3.4794, df = 23, p-value = 0.002027
+## data:  d$Condition3_Gain1.2 and d$Condition2_Gain1
+## t = -3.8993, df = 47, p-value = 0.0003054
 ## alternative hypothesis: true difference in means is not equal to 0
 ## 95 percent confidence interval:
-##  0.02787523 0.10962477
+##  -0.10422007 -0.03327993
 ## sample estimates:
 ## mean of the differences 
-##                 0.06875</code></pre>
-<pre class="r"><code>understatement.effectsize &lt;- compareValues(reportedValue = .67, obtainedValue = .89)
+##                -0.06875</code></pre>
+<pre class="r"><code>understatement.effectsize &lt;- compareValues(reportedValue = .67, obtainedValue = .6663313)
 
-understatement.pvalue &lt;- compareValues(reportedValue = .006, obtainedValue = .0049, isP=T)
+understatement.pvalue &lt;- compareValues(reportedValue = .006, obtainedValue = .00205, isP=T)
 
-overstatement.effectsize &lt;- compareValues(reportedValue = .8, obtainedValue = 1.0042, isP=T)
+overstatement.effectsize &lt;- compareValues(reportedValue = .8, obtainedValue = 0.7959338, isP=T)
 
-overstatement.pvalue &lt;- compareValues(reportedValue = .001, obtainedValue = .002, isP=T)
+overstatement.pvalue &lt;- compareValues(reportedValue = .001, obtainedValue = .0003054, isP=T)
 
 
 
 understatement.effectsize</code></pre>
-<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (0.67) and the obtained value (0.89) differed by 32.84%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (0.67) and the obtained value (0.67) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
 <pre class="r"><code>understatement.pvalue</code></pre>
-<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (0.006) and the obtained value (0.005) differed by 16.67%. NB obtained value was rounded to 3 decimal places.&quot;</code></pre>
+<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (0.006) and the obtained value (0.002) differed by 66.67%. NB obtained value was rounded to 3 decimal places.&quot;</code></pre>
 <pre class="r"><code>overstatement.effectsize</code></pre>
-<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (0.8) and the obtained value (1) differed by 25%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
+<pre><code>## [1] &quot;MATCH. The reported value (0.8) and the obtained value (0.8) differed by 0%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
 <pre class="r"><code>overstatement.pvalue</code></pre>
-<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (0.001) and the obtained value (0.002) differed by 100%. NB obtained value was rounded to 3 decimal places.&quot;</code></pre>
-<ol start="4" style="list-style-type: decimal">
-<li>Fourth, I compare the percentage change and confidence intervals. The percentage change for the understatement was off, but the percentage change for the overstatement was right.</li>
-</ol>
+<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (0.001) and the obtained value (0) differed by 100%. NB obtained value was rounded to 3 decimal places.&quot;</code></pre>
+<p>4 – Fourth, I compare the percentage change and confidence intervals. The percentage change for the understatement (e.g. 0.8 vs 1) had a major numerical error, and the confidence interval for the overstatement had a minor numerical error. Overall, however, the same effects were seen.</p>
 <p>Original quote: “Specifically, during visual feedback that understated true rotation, pain-free range of motion was increased by 6% (95% confidence interval, or CI = [2%, 11%]); during visual feedback that overstated true rotation, pain-free range of motion decreased by 7% (95% CI = [3%, 11%]). Therefore, our results show an overall effect of the manipulation of 13%.”&quot;</p>
 <pre class="r"><code>pctchng0.8v1 &lt;- 100*((mean0.8-mean1)/mean1)
-pctchng1.2v1 &lt;- 100*((mean1.2-mean1)/mean1)
+pctchng1.2v1 &lt;- -100*((mean1.2-mean1)/mean1) #use negative 100 as this direction will be lower
 pctchngtotal &lt;- abs(pctchng0.8v1) + abs(pctchng1.2v1)
 
-t.test0.8v1 &lt;- t.test(d.comparison$meancondition1_gain0.8,d.comparison$meancondition2_gain1)$conf.int
-t.test1.2v1 &lt;- t.test(d.comparison$meancondition2_gain1,d.comparison$meancondition3_gain1.2)$conf.int
+t.test0.8v1 &lt;- t.test(d$Condition1_Gain0.8,d$Condition2_Gain1)$conf.int
+t.test1.2v1 &lt;- t.test(d$Condition2_Gain1,d$Condition3_Gain1.2)$conf.int
 
 #Vision understated true rotation
 pctchng0.8v1</code></pre>
 <pre><code>## [1] 6.541667</code></pre>
 <pre class="r"><code>t.test0.8v1</code></pre>
-<pre><code>## [1] 0.02186668 0.10896665
+<pre><code>## [1] 0.02510187 0.10573147
 ## attr(,&quot;conf.level&quot;)
 ## [1] 0.95</code></pre>
 <pre class="r"><code>#Vision overstated true rotation
 pctchng1.2v1</code></pre>
-<pre><code>## [1] -6.875</code></pre>
+<pre><code>## [1] 6.875</code></pre>
 <pre class="r"><code>t.test1.2v1</code></pre>
-<pre><code>## [1] 0.02787523 0.10962477
+<pre><code>## [1] 0.03327993 0.10422007
 ## attr(,&quot;conf.level&quot;)
 ## [1] 0.95</code></pre>
 <pre class="r"><code>pctchngtotal</code></pre>
 <pre><code>## [1] 13.41667</code></pre>
-<pre class="r"><code>understatement.pctchng &lt;- compareValues(reportedValue = 6, obtainedValue = 6.54)
-understatement.confidence.lower &lt;- compareValues(reportedValue = 2, obtainedValue = 2.18)
-understatement.confidence.upper &lt;- compareValues(reportedValue = 11, obtainedValue = 10.89)
+<pre class="r"><code>understatement.pctchng &lt;- compareValues(reportedValue = 6, obtainedValue = 6.541667)
+understatement.confidence.lower &lt;- compareValues(reportedValue = 2, obtainedValue = 2.510187)
+understatement.confidence.upper &lt;- compareValues(reportedValue = 11, obtainedValue = 10.573147)
 
 overstatement.pctchng &lt;- compareValues(reportedValue = 7, obtainedValue = 6.875)
-overstatement.confidence.lower &lt;- compareValues(reportedValue = 3, obtainedValue = 2.79)
-overstatement.confidence.upper &lt;- compareValues(reportedValue = 11, obtainedValue = 10.96)
+overstatement.confidence.lower &lt;- compareValues(reportedValue = 3, obtainedValue = 3.327993)
+overstatement.confidence.upper &lt;- compareValues(reportedValue = 11, obtainedValue = 10.422007)
 
-pctchngtotal &lt;- compareValues(reportedValue = 13, obtainedValue = 13.42)
+pctchngtotal &lt;- compareValues(reportedValue = 13, obtainedValue = 13.41667)
 
 understatement.pctchng</code></pre>
 <pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (6) and the obtained value (7) differed by 16.67%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 <pre class="r"><code>understatement.confidence.lower</code></pre>
-<pre><code>## [1] &quot;MATCH. The reported value (2) and the obtained value (2) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
+<pre><code>## [1] &quot;MAJOR NUMERICAL ERROR. The reported value (2) and the obtained value (3) differed by 50%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 <pre class="r"><code>understatement.confidence.upper</code></pre>
 <pre><code>## [1] &quot;MATCH. The reported value (11) and the obtained value (11) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 <pre class="r"><code>overstatement.pctchng</code></pre>
@@ -566,33 +569,44 @@ understatement.pctchng</code></pre>
 <pre class="r"><code>overstatement.confidence.lower</code></pre>
 <pre><code>## [1] &quot;MATCH. The reported value (3) and the obtained value (3) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 <pre class="r"><code>overstatement.confidence.upper</code></pre>
-<pre><code>## [1] &quot;MATCH. The reported value (11) and the obtained value (11) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
+<pre><code>## [1] &quot;MINOR NUMERICAL ERROR. The reported value (11) and the obtained value (10) differed by 9.09%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 <pre class="r"><code>pctchngtotal</code></pre>
 <pre><code>## [1] &quot;MATCH. The reported value (13) and the obtained value (13) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 </div>
 </div>
 <div id="step-5-conclusion" class="section level2">
 <h2>Step 5: Conclusion</h2>
-<p>[Include the carpsReport function below]</p>
-<pre class="r"><code># You can delete this commented text for your report, it is here to serve as a guide.
-# Use the carpsReport() function in this code chunk.
-# Here is a guide to the arguments you should include in the function:
-# Report_Type: Enter 'pilot' or 'final'
-# Article_ID: Enter the article's unique ID code
-# Insufficient_Information_Errors: Enter the number of Insufficient Information Errors
-# Decision_Errors Enter: the number of decision errors
-# Major_Numerical_Errors: Enter the number of major numerical errors
-# Time_to_Complete: Enter the estimated time to complete the report in minutes
-# Author_Assistance: Enter whether author assistance was required (TRUE/FALSE)
-# FOR EXAMPLE:
-# carpsReport(Report_Type = &quot;pilot&quot;, 
-#             Article_ID = &quot;ABhgyo&quot;, 
-#             Insufficient_Information_Errors = 0, 
-#             Decision_Errors = 1, 
-#             Major_Numerical_Errors = 4, 
-#             Time_to_Complete = 120, 
-#             Author_Assistance = TRUE)</code></pre>
-<p>[Please also include a brief text summary describing your findings. If this reproducibility check was a failure, you should note any suggestions as to what you think the likely cause(s) might be.]</p>
+<p>In this computational reproducibility, the findings of the original paper were largely confirmed — that there was a large effect of manipulated perception on pain perception on both the understating and overstating condition. In addition, though there were minor or major numerical discrepancies across the findings, these did not affect any statistical conclusions. There are still several questions I have (below).</p>
+<pre class="r"><code>carpsReport(Report_Type = &quot;pilot&quot;, 
+             Article_ID = &quot;CARPS_3-4-2015_PS&quot;, 
+             Insufficient_Information_Errors = 0, 
+             Decision_Errors = 0, 
+             Major_Numerical_Errors = 4, 
+             Time_to_Complete = 720, 
+             Author_Assistance = FALSE)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">Insufficient_Information_Errors</th>
+<th align="right">Decision_Errors</th>
+<th align="right">Major_Numerical_Errors</th>
+<th align="right">Time_to_Complete</th>
+<th align="left">Final_Outcome</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">4</td>
+<td align="right">720</td>
+<td align="left">Failure</td>
+</tr>
+</tbody>
+</table>
+<p>First of all, my repeated measures ANOVA yielded nearly the same F statistic (18.9 in paper vs 18.6 calculated) with the same p-value (&lt;0.01); please note, however, that the degrees of freedom in my calculation were off (94 in paper and 92 calculated), and I could not figure out how to calculate the effect size. Second of all, all pairwise comparisons among the three conditions were the same (p&lt;0.01); note that the author did not specify the type of pair-wise and I just assumed t-tests (rather than assuming insufficient information). Third of all, while the effect sizes for understating vision (virtual rotation was 80% of actual rotation) and overstating vision (virtual rotation was 80% of actual rotation), the p-values had major errors (0.006 vs 0.002; 0.001 vs 0.0003) that did not affect statistical conclusions (e.g. can still conclude the effect was significant). Fourth of all, while there were several errors in changes in range of motion — a major numerical error in the estimation of the percentage increase in range of motion for the understating range of motion condition (6% paper vs. 6.5% calculated), a minor numerical error in the lower confidence interval estimate for the range of motion increase for the understating condition (2% paper vs. 2.5% calculation), and a minor numerical error int he upper confidence interval estimate for the range of motion decrease for the overstating condition (11% paper vs. 10.4% calculation) — these did not effect the general conclusions for percentage changes and confidence intervals. Please note that I did not record the repeated measures ANOVA errors as insufficient errors, but as minor numerical errors.</p>
+<p>My outstanding questions are: (a) how did the authors get 94 not 92 degrees of freedom?, (b) why did they seemingly use direction of rotation as a between-subjects variable, (c) how do you extract effect size for a repeated measures anova, and (d) why did the numerical errors that happened happen?</p>
+<p>Tom — I would love to be kept informed about what you find, and help out where I can!</p>
 <p>[This function will output information about the package versions used in this report:]</p>
 <pre class="r"><code>devtools::session_info()</code></pre>
 <pre><code>##  setting  value                       
@@ -602,151 +616,176 @@ understatement.pctchng</code></pre>
 ##  language (EN)                        
 ##  collate  en_US.UTF-8                 
 ##  tz       America/Los_Angeles         
-##  date     2017-11-02                  
+##  date     2017-11-05                  
 ## 
-##  package      * version date      
-##  assertthat     0.2.0   2017-04-11
-##  backports      1.1.1   2017-09-25
-##  base         * 3.4.1   2017-07-07
-##  bindr          0.1     2016-11-13
-##  bindrcpp       0.2     2017-06-17
-##  broom          0.4.2   2017-02-13
-##  car            2.1-5   2017-07-04
-##  CARPSreports * 0.1     2017-10-30
-##  cellranger     1.1.0   2016-07-27
-##  colorspace     1.3-2   2016-12-14
-##  compiler       3.4.1   2017-07-07
-##  compute.es   * 0.2-4   2014-09-16
-##  datasets     * 3.4.1   2017-07-07
-##  devtools       1.13.3  2017-08-02
-##  digest         0.6.12  2017-01-27
-##  dplyr        * 0.7.3   2017-09-09
-##  effsize      * 0.7.1   2017-03-21
-##  evaluate       0.10.1  2017-06-24
-##  ez           * 4.4-0   2016-11-02
-##  forcats        0.2.0   2017-01-23
-##  foreign        0.8-69  2017-06-22
-##  ggplot2      * 2.2.1   2016-12-30
-##  glue           1.1.1   2017-06-21
-##  graphics     * 3.4.1   2017-07-07
-##  grDevices    * 3.4.1   2017-07-07
-##  grid           3.4.1   2017-07-07
-##  gtable         0.2.0   2016-02-26
-##  haven        * 1.1.0   2017-07-09
-##  hms            0.3     2016-11-22
-##  htmltools      0.3.6   2017-04-28
-##  httr           1.3.1   2017-08-20
-##  jsonlite       1.5     2017-06-01
-##  knitr        * 1.17    2017-08-10
-##  lattice        0.20-35 2017-03-25
-##  lazyeval       0.2.0   2016-06-12
-##  lme4           1.1-14  2017-09-27
-##  lsr          * 0.5     2015-03-02
-##  lubridate      1.6.0   2016-09-13
-##  magrittr       1.5     2014-11-22
-##  MASS           7.3-47  2017-02-26
-##  Matrix         1.2-10  2017-05-03
-##  MatrixModels   0.4-1   2015-08-22
-##  memoise        1.1.0   2017-04-21
-##  methods      * 3.4.1   2017-07-07
-##  mgcv           1.8-17  2017-02-08
-##  minqa          1.2.4   2014-10-09
-##  mnormt         1.5-5   2016-10-15
-##  modelr         0.1.1   2017-07-24
-##  munsell        0.4.3   2016-02-13
-##  nlme           3.1-131 2017-02-06
-##  nloptr         1.0.4   2014-08-04
-##  nnet           7.3-12  2016-02-02
-##  parallel       3.4.1   2017-07-07
-##  pbkrtest       0.4-7   2017-03-15
-##  pkgconfig      2.0.1   2017-03-21
-##  plyr           1.8.4   2016-06-08
-##  psych          1.7.8   2017-09-09
-##  purrr        * 0.2.3   2017-08-02
-##  quantreg       5.34    2017-10-25
-##  R6             2.2.2   2017-06-17
-##  Rcpp           0.12.12 2017-07-15
-##  readr        * 1.1.1   2017-05-16
-##  readxl       * 1.0.0   2017-04-18
-##  reshape2       1.4.2   2016-10-22
-##  rlang          0.1.2   2017-08-09
-##  rmarkdown      1.6     2017-06-15
-##  rprojroot      1.2     2017-01-16
-##  rvest          0.3.2   2016-06-17
-##  scales         0.5.0   2017-08-24
-##  SparseM        1.77    2017-04-23
-##  splines        3.4.1   2017-07-07
-##  stats        * 3.4.1   2017-07-07
-##  stringi        1.1.5   2017-04-07
-##  stringr        1.2.0   2017-02-18
-##  tibble       * 1.3.4   2017-08-22
-##  tidyr        * 0.7.1   2017-09-01
-##  tidyselect     0.2.0   2017-08-30
-##  tidyverse    * 1.1.1   2017-01-27
-##  tools          3.4.1   2017-07-07
-##  utils        * 3.4.1   2017-07-07
-##  withr          2.0.0   2017-07-28
-##  xml2           1.1.1   2017-01-24
-##  yaml           2.1.14  2016-11-12
+##  package      * version  date      
+##  acepack        1.4.1    2016-10-29
+##  afex         * 0.18-0   2017-05-25
+##  assertthat     0.2.0    2017-04-11
+##  backports      1.1.1    2017-09-25
+##  base         * 3.4.1    2017-07-07
+##  base64enc      0.1-3    2015-07-28
+##  bindr          0.1      2016-11-13
+##  bindrcpp       0.2      2017-06-17
+##  broom          0.4.2    2017-02-13
+##  car            2.1-5    2017-07-04
+##  CARPSreports * 0.1      2017-10-30
+##  cellranger     1.1.0    2016-07-27
+##  checkmate      1.8.5    2017-10-24
+##  cluster        2.0.6    2017-03-10
+##  coda           0.19-1   2016-12-08
+##  codetools      0.2-15   2016-10-05
+##  coin           1.2-1    2017-07-17
+##  colorspace     1.3-2    2016-12-14
+##  compiler       3.4.1    2017-07-07
+##  compute.es   * 0.2-4    2014-09-16
+##  data.table     1.10.4-3 2017-10-27
+##  datasets     * 3.4.1    2017-07-07
+##  devtools       1.13.3   2017-08-02
+##  digest         0.6.12   2017-01-27
+##  dplyr        * 0.7.3    2017-09-09
+##  effsize      * 0.7.1    2017-03-21
+##  estimability   1.2      2016-11-19
+##  evaluate       0.10.1   2017-06-24
+##  ez           * 4.4-0    2016-11-02
+##  forcats        0.2.0    2017-01-23
+##  foreign        0.8-69   2017-06-22
+##  Formula        1.2-2    2017-07-10
+##  ggplot2      * 2.2.1    2016-12-30
+##  glue           1.1.1    2017-06-21
+##  graphics     * 3.4.1    2017-07-07
+##  grDevices    * 3.4.1    2017-07-07
+##  grid           3.4.1    2017-07-07
+##  gridExtra      2.3      2017-09-09
+##  gtable         0.2.0    2016-02-26
+##  haven        * 1.1.0    2017-07-09
+##  highr          0.6      2016-05-09
+##  Hmisc          4.0-3    2017-05-02
+##  hms            0.3      2016-11-22
+##  htmlTable      1.9      2017-01-26
+##  htmltools      0.3.6    2017-04-28
+##  htmlwidgets    0.9      2017-07-10
+##  httr           1.3.1    2017-08-20
+##  jsonlite       1.5      2017-06-01
+##  knitr        * 1.17     2017-08-10
+##  lattice        0.20-35  2017-03-25
+##  latticeExtra   0.6-28   2016-02-09
+##  lazyeval       0.2.0    2016-06-12
+##  lme4         * 1.1-14   2017-09-27
+##  lmerTest       2.0-33   2016-12-03
+##  lsmeans      * 2.27-61  2017-11-05
+##  lsr          * 0.5      2015-03-02
+##  lubridate      1.6.0    2016-09-13
+##  magrittr       1.5      2014-11-22
+##  MASS           7.3-47   2017-02-26
+##  Matrix       * 1.2-10   2017-05-03
+##  MatrixModels   0.4-1    2015-08-22
+##  memoise        1.1.0    2017-04-21
+##  methods      * 3.4.1    2017-07-07
+##  mgcv           1.8-17   2017-02-08
+##  minqa          1.2.4    2014-10-09
+##  mnormt         1.5-5    2016-10-15
+##  modelr         0.1.1    2017-07-24
+##  modeltools     0.2-21   2013-09-02
+##  multcomp       1.4-7    2017-09-07
+##  munsell        0.4.3    2016-02-13
+##  mvtnorm        1.0-6    2017-03-02
+##  nlme           3.1-131  2017-02-06
+##  nloptr         1.0.4    2014-08-04
+##  nnet           7.3-12   2016-02-02
+##  parallel       3.4.1    2017-07-07
+##  pbkrtest       0.4-7    2017-03-15
+##  pkgconfig      2.0.1    2017-03-21
+##  plyr           1.8.4    2016-06-08
+##  psych          1.7.8    2017-09-09
+##  purrr        * 0.2.3    2017-08-02
+##  quantreg       5.34     2017-10-25
+##  R6             2.2.2    2017-06-17
+##  RColorBrewer   1.1-2    2014-12-07
+##  Rcpp           0.12.12  2017-07-15
+##  readr        * 1.1.1    2017-05-16
+##  readxl       * 1.0.0    2017-04-18
+##  reshape2       1.4.2    2016-10-22
+##  rlang          0.1.2    2017-08-09
+##  rmarkdown      1.6      2017-06-15
+##  rpart          4.1-11   2017-03-13
+##  rprojroot      1.2      2017-01-16
+##  rvest          0.3.2    2016-06-17
+##  sandwich       2.4-0    2017-07-26
+##  scales         0.5.0    2017-08-24
+##  schoRsch     * 1.4      2017-02-14
+##  SparseM        1.77     2017-04-23
+##  splines        3.4.1    2017-07-07
+##  stats        * 3.4.1    2017-07-07
+##  stats4         3.4.1    2017-07-07
+##  stringi        1.1.5    2017-04-07
+##  stringr        1.2.0    2017-02-18
+##  survival       2.41-3   2017-04-04
+##  TH.data        1.0-8    2017-01-23
+##  tibble       * 1.3.4    2017-08-22
+##  tidyr        * 0.7.1    2017-09-01
+##  tidyselect     0.2.0    2017-08-30
+##  tidyverse    * 1.1.1    2017-01-27
+##  tools          3.4.1    2017-07-07
+##  utils        * 3.4.1    2017-07-07
+##  withr          2.0.0    2017-07-28
+##  xml2           1.1.1    2017-01-24
+##  xtable         1.8-2    2016-02-05
+##  yaml           2.1.14   2016-11-12
+##  zoo            1.8-0    2017-04-12
 ##  source                                     
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.2)                             
 ##  local                                      
+##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.1)                             
 ##  Github (METRICS-CARPS/CARPSreports@d8ebcab)
 ##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.2)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.0)                             
 ##  local                                      
-##  CRAN (R 3.4.0)                             
-##  local                                      
-##  CRAN (R 3.4.1)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.1)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.1)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.1)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.1)                             
-##  local                                      
-##  local                                      
-##  local                                      
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.1)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.1)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.1)                             
-##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.2)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.1)                             
-##  CRAN (R 3.4.1)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.0)                             
 ##  local                                      
 ##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.1)                             
 ##  local                                      
+##  local                                      
+##  local                                      
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.2)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.1)                             
@@ -757,19 +796,56 @@ understatement.pctchng</code></pre>
 ##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.0)                             
+##  local                                      
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
+##  local                                      
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.2)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
+##  local                                      
+##  local                                      
+##  local                                      
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.0)                             
 ##  local                                      
 ##  local                                      
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.1)                             
-##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.0)                             
-##  local                                      
-##  local                                      
-##  CRAN (R 3.4.1)                             
+##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.0)</code></pre>
 </div>

@@ -89,7 +89,7 @@ d.tidy$DirectionofRotation <- as.numeric(d.tidy$DirectionofRotation)
 
 ### Pre-processing
 
-1) For reference, I want to create a tidy table that groups by participant and averages across direction of rotation (e.g. left or right).
+1 -- For reference, I want to create a tidy table that groups by participant and averages across direction of rotation (e.g. left or right).
 
 ```{r Average by condition}
 
@@ -106,7 +106,7 @@ d.comparison <- d %>%
 ### Descriptive statistics
 
 
-1) I want to find the means per condition.
+1 -- I want to find the means per condition.
 
 ```{r Means}
 
@@ -120,7 +120,7 @@ mean1.2 <- mean(d$Condition3_Gain1.2)
 
 ### Inferential statistics
 
-1) I create a repeated measures ANOVa using condition as a within subjects variable, and DirectionofRotation as a between subjects variable. This achieves nearly the desired effect size and degrees of freedom, and the correct p value.
+1 -- I create a repeated measures ANOVa using condition as a within subjects variable, and DirectionofRotation as a between subjects variable. This achieves nearly the desired effect size and degrees of freedom, and the correct p value.
 
 I should note that I do not quite understand why DirectionofRotation is a between subjects variable; it seems like it should be another within variabe. However, doing this just yields 46 degrees of freedom. 
 
@@ -196,7 +196,7 @@ repanova.pval.comp
 
 ```
 
-2) Second, I look at all pairwise compairsons. Since the methodology was not mentioned (e.g. either F-statistic comparisons or t tests), I used t-tests. All were the same, e.g. ; < 0.01.
+2 -- Second, I look at all pairwise compairsons. Since the methodology was not mentioned (e.g. either F-statistic comparisons or t tests), I used t-tests. All were the same, e.g. ; < 0.01.
 
 Original text: "All pairwise comparisons were significant (ps < .01)."
 
@@ -229,7 +229,7 @@ pairwise.3
 ```
 
 
-3) Third, I compare effect sizes and related p values. While the effect sizes were right the p values had major numerical errors; that said, there was no change in inference of stasticial power. In other words, there was a stastically significant difference between understating and normal as well as between overstating and normal
+3 -- Third, I compare effect sizes and related p values. While the effect sizes were right the p values had major numerical errors; that said, there was no change in inference of stasticial power. In other words, there was a stastically significant difference between understating and normal as well as between overstating and normal
 
 Original Text: "As shown in Figure 3, when vision understated true rotation, pain-free range of motion was increased, and this was a medium-sized effect, p = .006, d = 0.67; when vision overstated true rotation, pain-free range of motion was decreased, and this was a large effect, p = .001, d = 0.80."
 
@@ -263,11 +263,11 @@ ttest1.2v1
 
 understatement.effectsize <- compareValues(reportedValue = .67, obtainedValue = .6663313)
 
-understatement.pvalue <- compareValues(reportedValue = .006, obtainedValue = .004961, isP=T)
+understatement.pvalue <- compareValues(reportedValue = .006, obtainedValue = .00205, isP=T)
 
 overstatement.effectsize <- compareValues(reportedValue = .8, obtainedValue = 0.7959338, isP=T)
 
-overstatement.pvalue <- compareValues(reportedValue = .001, obtainedValue = .002027, isP=T)
+overstatement.pvalue <- compareValues(reportedValue = .001, obtainedValue = .0003054, isP=T)
 
 
 
@@ -279,7 +279,7 @@ overstatement.pvalue
 
 ```
 
-4) Fourth, I compare the percentage change and confidence intervals. The percentage change for the understatement (e.g. 0.8 vs 1) had a major numerical error, and the confidence interval for the overstatement had a minor numerical error. Overall, however, the same effects were seen.
+4 -- Fourth, I compare the percentage change and confidence intervals. The percentage change for the understatement (e.g. 0.8 vs 1) had a major numerical error, and the confidence interval for the overstatement had a minor numerical error. Overall, however, the same effects were seen.
 
 Original quote: "Specifically, during visual feedback that understated true rotation, pain-free range of motion was increased by 6% (95% confidence interval, or CI = [2%, 11%]); during visual feedback that overstated true rotation, pain-free range of motion decreased by 7% (95% CI = [3%, 11%]). Therefore, our results show an overall effect of the manipulation of 13%.""
 
@@ -328,7 +328,7 @@ pctchngtotal
 
 ## Step 5: Conclusion
 
-In this computational reproducibility, the findings of the original paper were largely confirmed — that there was a large effect of manipulated perception on pain perception on both the understating and overstating condition. In addition, though there were minor or major numerical discrepancies across the findings, these did not affect any statistical conclusions. 
+In this computational reproducibility, the findings of the original paper were largely confirmed — that there was a large effect of manipulated perception on pain perception on both the understating and overstating condition. In addition, though there were minor or major numerical discrepancies across the findings, these did not affect any statistical conclusions. There are still several questions I have (below).
 
 ```{r carpsReport}
 carpsReport(Report_Type = "pilot", 
@@ -341,11 +341,9 @@ carpsReport(Report_Type = "pilot",
 ```
 
 
-First of all, my repeated measures ANOVA yielded nearly the same F statistic (18.9 in paper vs 18.6 calculated) with the same p-value (<0.01); please note, however, that the degrees of freedom in my calculation were off (94 in paper and 92 calculated), and I could not figure out how to calculate the effect size. Second of all, all pairwise comparisons among the three conditions were the same (p<0.01). Third of all, while the effect sizes for understating vision (virtual rotation was 80% of actual rotation) and overstating vision (virtual rotation was 80% of actual rotation), the p-values had major errors (0.006 vs 0.005; 0.001 vs 0.002) that did not affect statistical conclusions (e.g. concluding the effect was significant was still possible). Fourth of all, while there were several errors in changes in range of motion — a major numerical error in the estimation of the percentage increase in range of motion for the understating range of motion condition (6% paper vs. 6.5% calculated), a minor numerical error in the lower confidence interval estimate for the range of motion increase for the understating condition (2% paper vs. 2.5% calculation), and a minor numerical error int he upper confidence interval estimate for the range of motion decrease for the overstating condition (11% paper vs. 10.4% calculation) — these did not effect the general conclusions for percentage changes and confidence intervals. 
+First of all, my repeated measures ANOVA yielded nearly the same F statistic (18.9 in paper vs 18.6 calculated) with the same p-value (<0.01); please note, however, that the degrees of freedom in my calculation were off (94 in paper and 92 calculated), and I could not figure out how to calculate the effect size. Second of all, all pairwise comparisons among the three conditions were the same (p<0.01); note that the author did not specify the type of pair-wise and I just assumed t-tests (rather than assuming insufficient information). Third of all, while the effect sizes for understating vision (virtual rotation was 80% of actual rotation) and overstating vision (virtual rotation was 80% of actual rotation), the p-values had major errors (0.006 vs 0.002; 0.001 vs 0.0003) that did not affect statistical conclusions (e.g. can still conclude the effect was significant). Fourth of all, while there were several errors in changes in range of motion — a major numerical error in the estimation of the percentage increase in range of motion for the understating range of motion condition (6% paper vs. 6.5% calculated), a minor numerical error in the lower confidence interval estimate for the range of motion increase for the understating condition (2% paper vs. 2.5% calculation), and a minor numerical error int he upper confidence interval estimate for the range of motion decrease for the overstating condition (11% paper vs. 10.4% calculation) — these did not effect the general conclusions for percentage changes and confidence intervals. Please note that I did not record the repeated measures ANOVA errors as insufficient errors, but as minor numerical errors. 
 
 My outstanding questions are: (a) how did the authors get 94 not 92 degrees of freedom?, (b) why did they seemingly use direction of rotation as a between-subjects variable, (c) how do you extract effect size for a repeated measures anova, and (d) why did the numerical errors that happened happen?
-
-Please note that I did not record the repeated measures ANOVA errors as insufficient errors, but as minor numerical errors. 
 
 Tom — I would love to be kept informed about what you find, and help out where I can!
 
