@@ -11,17 +11,19 @@ output:
 #### Pilot 1: Erik Santoro
 #### Co-pilot: Tysen Dauer & Jaclyn Schwartz
 #### Start date: 10/31/2017
-#### End date: [Insert end date - use US format]   
+#### End date: 11/5/2017  
 
 -------
 
 #### Methods summary: 
-[Write a brief summary of the methods underlying the target outcomes written in your own words]
+This paper tested the effects of proprioceptive information -- aka our sense of body movement -- on pain; the outstanding theories on pain up to that point had covered nocioception, or internal-stimuli. To examine the effects of perception on pain, participants wore a virtual reality headset while rotating their heads until they felt pain; the distance between the center and where they felt pain as measured by degrees, the "pain-free range of motion", was the main dependent variable. Participants  rotated their head to the left and to the right for 3 conditions: perceived movement understated true movement (e.g. gain = 0.8, or virtual rotation was 80% of actual rotation), was the same as true movement (e.g. gain = 1, or 100% of actual rotation), or overstated true movement (e.g. gain = 1.2, or virutal rotation was 120% of actual rotation). The order in which participants experienced the conditions was counterbalanced. To minimize the detection of virtual reality manipulation, participants were exposed to a different visual scene for each of the 6 trials (3 conditions * 2 directions of rotation). The participants and experimenters were blinded. Finally, there were two "manipulation checks": the first piloted 9 healthy participants to find the ranges within which participants would not be able to determine virtual reality manipulation, and the second assessed the quality check of the machine.
 
 ------
 
 #### Target outcomes: 
-[Insert the target outcomes identified in targetOutcomes.md]  
+The repeated measures ANOVA revealed a large overall effect of visual-proprioceptive feedback (condition) on
+pain-free range of motion F(2, 94) = 18.9, p < .001, η·p2 = 0.29. All pairwise comparisons were significant (ps < .01). As shown in Figure 3, when vision understated true rotation, pain-free range of motion was increased, and this
+was a medium-sized effect, p = .006, d = 0.67; when vision overstated true rotation, pain-free range of motion was decreased, and this was a large effect, p = .001, d = 0.80. Specifically, during visual feedback that understated true rotation, pain-free range of motion was increased by 6% (95% confidence interval, or CI = [2%, 11%]); during visual feedback that overstated true rotation, pain-free range of motion decreased by 7% (95% CI = [3%, 11%]). Therefore, our results show an overall effect of the manipulation of 13%.
 
 ------
 
@@ -49,6 +51,8 @@ library(ez) # for repeated ANOVAs
 library(effsize) #for effect size
 library(compute.es) #for effect size
 library(lsr) #for cohen's d
+library(afex) #for effect sizes
+library(schoRsch)
 ```
 
 
@@ -62,27 +66,22 @@ d <- read.table("data/Bogus visual feedback alters movement_Data.tab", header=TR
 
 ## Step 3: Tidy data
 
-I tidied the data in two ways. First, I gathered by condition. However, when I ran the repeated measures of variance, the F stat and degrees of freedom were different (46 vs. 94). And so I tested another method -- I made each direction of rotation per participant per condition a separate trail. This gave a slightly higher F stat, but still wrong. I have commented out this second version.
+Here, I tidy the data and convert the variables needed in the ANOVA in a proper way.
 
 
 ```{r Tidy data}
 
-d.tidy.1 <- d %>%
+#Create tidy data set
+
+d.tidy <- d %>%
   gather(condition,rangeofmotion,starts_with("condition")) #the value various condition columns contains are the range of motion
 
-d.tidy.1$Participant <- as.factor(d.tidy.1$Participant)
-d.tidy.1$condition <- as.factor(d.tidy.1$condition)
+#Need to convert following columns to proper type
 
+d.tidy$Participant <- as.factor(d.tidy$Participant)
+d.tidy$condition <- as.factor(d.tidy$condition)
+d.tidy$DirectionofRotation <- as.numeric(d.tidy$DirectionofRotation)
 
-#[For reference] Tidy 2 -- testing hypothesis of looking at participant per direction as a separate trial
-
-# d.tidy.2 <- d %>%
-#   mutate(trial = Participant * DirectionofRotation) %>% # creates a separate row at a participation * rotation
-#   select(-Participant,-DirectionofRotation) %>%
-#   gather(condition,rangeofmotion,starts_with("condition")) 
-#   
-# d.tidy.2$trial <- as.factor(d.tidy.2$trial)
-# d.tidy.2$condition <- as.factor(d.tidy.2$condition)
 
 ```
 
@@ -90,7 +89,7 @@ d.tidy.1$condition <- as.factor(d.tidy.1$condition)
 
 ### Pre-processing
 
-1) I want to create a tidy table that groups by participant and averages across direction of rotation (e.g. left or right).
+1) For reference, I want to create a tidy table that groups by participant and averages across direction of rotation (e.g. left or right).
 
 ```{r Average by condition}
 
@@ -121,35 +120,52 @@ mean1.2 <- mean(d$Condition3_Gain1.2)
 
 ### Inferential statistics
 
-First, I attempt to re-create the repeated measures anova. We find that the F statistic had a major numerical error, but the p values matched (note both were p < 0.001, and noted as p = 0.001). In addition, please note that there were 94 degrees of freedom listed in the original paper, but only 46 here. Finally, I could not figure out how to calculate partial eta squared after ~30 minutes of searching.
+1) I create a repeated measures ANOVa using condition as a within subjects variable, and DirectionofRotation as a between subjects variable. This achieves nearly the desired effect size and degrees of freedom, and the correct p value.
 
-Original Text: "The repeated measures ANOVA revealed a large overall effect of visual-proprioceptive feedback (condition) on pain-free range of motion F(2, 94) = 18.9, p < .001, p 2 = 0.29."
+I should note that I do not quite understand why DirectionofRotation is a between subjects variable; it seems like it should be another within variabe. However, doing this just yields 46 degrees of freedom. 
+
+Finally, after much testing (some results displayed below), I could not figure out how to extract effect size from either the ezANOVA package or the aov_ez package. Note that the ezANOVA gives the eta squared, not partial degrees of freedom, which I think is theoretically the same as there is only one independent variable? However, I am not sure on the stats!
+
+
+Original Text: "The repeated measures ANOVA revealed a large overall effect of visual-proprioceptive feedback (condition) on pain-free range of motion F(2, 94) = 18.9, p < .001, ηp 2 = 0.29."
 
 ```{r Repeated Measures ANOVA}
 
-modANOVA.1 <- ezANOVA(data = d.tidy.1,
+
+#Repeated Measures ANOVA 
+#Condition is within variable, and DirectionofRotation is the between variable; 
+
+modANOVA <- ezANOVA(data = d.tidy,
                   dv = rangeofmotion,
                   wid = Participant,
                   within = .(condition),
-                  within_full = DirectionofRotation, 
+                  between = DirectionofRotation, 
                   detailed = TRUE,
-                  return_aov = TRUE) #returns aov object, which is useful for calculating partial eta squared
+                  return_aov = TRUE) #returns aov object, which is supposedly useful for calculating partial eta squared, but I could not figure out
 
-print(modANOVA.1)
-
-#Note on within_full: this so the condition data is collapsed to mean of DirectionofRotation; becuase observations are the same, I think it's fine; https://groups.google.com/forum/#!topic/ez4r/e1MoQc06F4o
+print(modANOVA)
 
 
-# #Version 2
-# 
-# modANOVA.2 <- ezANOVA(data = d.tidy.2,
+
+#Attempt to create with aov_ez; Problem: between subjects factor had repeating participant id's
+#aov_ez <- aov_ez("Participant","rangeofmotion",d.tidy,between = c("DirectionofRotation"),within="condition")
+
+
+
+#Attempt to calculate partial eta squared; did not work
+#anova_out(ezout = modANOVA$aov$`Participant:condition`, print = TRUE,etasq = "partial")
+
+
+#Reference (46 degrees of freedom)
+
+# modANOVA2 <- ezANOVA(data = d.tidy,
 #                   dv = rangeofmotion,
-#                   wid = trial,
+#                   wid = Participant,
 #                   within = .(condition),
-#                   detailed = TRUE)
+#                   detailed = TRUE,
+#                   return_aov = TRUE) #returns aov object, which is useful for calculating partial eta squared
 # 
-# print(modANOVA.2)
-
+# print(modANOVA2)
 
 #demoAnova <- ezANOVA(myData, # specify data frame
 #                     dv = RT, # specify dependent variable 
@@ -165,12 +181,15 @@ print(modANOVA.1)
 
 ```{r Repeated ANOVA Compared Values}
 
-repanova.fstat.comp <- compareValues(reportedValue = 18.9, obtainedValue = 13.92793)
+repanova.fstat.comp <- compareValues(reportedValue = 18.9, obtainedValue = 18.63067)
+
+repanova.dendegreesfreedom.comp <- compareValues(reportedValue = 94, obtainedValue = 92)
 
 repanova.pval.comp <- compareValues(reportedValue = .001, obtainedValue = .001, isP=T)
 
 
 repanova.fstat.comp
+repanova.dendegreesfreedom.comp
 repanova.pval.comp
 
 
@@ -187,9 +206,9 @@ ttest0.8v1 <- t.test(d$Condition1_Gain0.8, d$Condition2_Gain1, paired = TRUE)
 ttest0.8v1.2 <- t.test(d$Condition1_Gain0.8, d$Condition3_Gain1.2, paired = TRUE)
 ttest1.2v1 <- t.test(d$Condition3_Gain1.2, d$Condition2_Gain1, paired = TRUE)
 
-ttest_0.8v1
-ttest_0.8v1.2
-ttest_1.2v1
+ttest0.8v1
+ttest0.8v1.2
+ttest1.2v1
 
 ```
 
@@ -210,30 +229,29 @@ pairwise.3
 ```
 
 
-3) Third, I compare effect sizes and related p values. While the effect sizes were right the p values had major numerical errors; that said, there was no change in inference of stasticial power. In other words, the difference between
+3) Third, I compare effect sizes and related p values. While the effect sizes were right the p values had major numerical errors; that said, there was no change in inference of stasticial power. In other words, there was a stastically significant difference between understating and normal as well as between overstating and normal
 
-Original Text: 
-"As shown in Figure 3, when vision understated true rotation, pain-free range of motion was increased, and this was a medium-sized effect, p = .006, d = 0.67; when vision overstated true rotation, pain-free range of motion was decreased, and this was a large effect, p = .001, d = 0.80."
+Original Text: "As shown in Figure 3, when vision understated true rotation, pain-free range of motion was increased, and this was a medium-sized effect, p = .006, d = 0.67; when vision overstated true rotation, pain-free range of motion was decreased, and this was a large effect, p = .001, d = 0.80."
 
 
 ```{r Effect size and Corresponding T Tests to Get P Values}
 
-#Normal, using original data set
+#Effect Size
 
 d0.8v1 <- cohensD(d$Condition1_Gain0.8, d$Condition2_Gain1) # vision understating true rotation
 
 d1v1.2 <- cohensD(d$Condition3_Gain1.2, d$Condition2_Gain1) # vision overstating true rotation
 
 
-# #Consolidate by area (aka by means)
+# FOR REFERENCE -- Consolidate by area (aka by means)
 # d0.8v1.consolidated <- cohensD(d.comparison$meancondition1_gain0.8, d.comparison$meancondition2_gain1)
 # d1v1.2.consolidated <- cohensD(d.comparison$meancondition3_gain1.2, d.comparison$meancondition2_gain1)
 
 
 d0.8v1
-ttest_0.8v1
+ttest0.8v1
 d1v1.2
-ttest_1.2v1
+ttest1.2v1
 
 
 
@@ -310,30 +328,27 @@ pctchngtotal
 
 ## Step 5: Conclusion
 
-[Include the carpsReport function below]
+In this computational reproducibility, the findings of the original paper were largely confirmed — that there was a large effect of manipulated perception on pain perception on both the understating and overstating condition. In addition, though there were minor or major numerical discrepancies across the findings, these did not affect any statistical conclusions. 
 
-```{r}
-# You can delete this commented text for your report, it is here to serve as a guide.
-# Use the carpsReport() function in this code chunk.
-# Here is a guide to the arguments you should include in the function:
-# Report_Type: Enter 'pilot' or 'final'
-# Article_ID: Enter the article's unique ID code
-# Insufficient_Information_Errors: Enter the number of Insufficient Information Errors
-# Decision_Errors Enter: the number of decision errors
-# Major_Numerical_Errors: Enter the number of major numerical errors
-# Time_to_Complete: Enter the estimated time to complete the report in minutes
-# Author_Assistance: Enter whether author assistance was required (TRUE/FALSE)
-# FOR EXAMPLE:
-# carpsReport(Report_Type = "pilot", 
-#             Article_ID = "ABhgyo", 
-#             Insufficient_Information_Errors = 0, 
-#             Decision_Errors = 1, 
-#             Major_Numerical_Errors = 4, 
-#             Time_to_Complete = 120, 
-#             Author_Assistance = TRUE)
+```{r carpsReport}
+carpsReport(Report_Type = "pilot", 
+             Article_ID = "CARPS_3-4-2015_PS", 
+             Insufficient_Information_Errors = 0, 
+             Decision_Errors = 0, 
+             Major_Numerical_Errors = 4, 
+             Time_to_Complete = 720, 
+             Author_Assistance = FALSE)
 ```
 
-[Please also include a brief text summary describing your findings. If this reproducibility check was a failure, you should note any suggestions as to what you think the likely cause(s) might be.]
+
+First of all, my repeated measures ANOVA yielded nearly the same F statistic (18.9 in paper vs 18.6 calculated) with the same p-value (<0.01); please note, however, that the degrees of freedom in my calculation were off (94 in paper and 92 calculated), and I could not figure out how to calculate the effect size. Second of all, all pairwise comparisons among the three conditions were the same (p<0.01). Third of all, while the effect sizes for understating vision (virtual rotation was 80% of actual rotation) and overstating vision (virtual rotation was 80% of actual rotation), the p-values had major errors (0.006 vs 0.005; 0.001 vs 0.002) that did not affect statistical conclusions (e.g. concluding the effect was significant was still possible). Fourth of all, while there were several errors in changes in range of motion — a major numerical error in the estimation of the percentage increase in range of motion for the understating range of motion condition (6% paper vs. 6.5% calculated), a minor numerical error in the lower confidence interval estimate for the range of motion increase for the understating condition (2% paper vs. 2.5% calculation), and a minor numerical error int he upper confidence interval estimate for the range of motion decrease for the overstating condition (11% paper vs. 10.4% calculation) — these did not effect the general conclusions for percentage changes and confidence intervals. 
+
+My outstanding questions are: (a) how did the authors get 94 not 92 degrees of freedom?, (b) why did they seemingly use direction of rotation as a between-subjects variable, (c) how do you extract effect size for a repeated measures anova, and (d) why did the numerical errors that happened happen?
+
+Please note that I did not record the repeated measures ANOVA errors as insufficient errors, but as minor numerical errors. 
+
+Tom — I would love to be kept informed about what you find, and help out where I can!
+
 
 [This function will output information about the package versions used in this report:]
 
