@@ -1,0 +1,2 @@
+articleID,pilotNames,copilotNames,pilotTTC,copilotTTC,pilotStartDate,copilotStartDate,completionDate,Author_Assistance,finalOutcome,Insufficient_Information_Errors,locus_typo,locus_specification,locus_analysis,locus_data,locus_unidentified
+3-4-2015_PS,"Erik Santoro, Tysen Dauer, Jaclyn Schwartz",,720,NA,2020-10-31,NA,NA,FALSE,Failure without author assistance,0,NA,NA,NA,NA,NA

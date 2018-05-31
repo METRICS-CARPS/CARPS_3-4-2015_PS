@@ -7,11 +7,17 @@ output:
    
 ---
 
-#### Article ID: CARPS_3-4-2015_PS
-#### Pilot 1: Erik Santoro
-#### Co-pilot: Tysen Dauer & Jaclyn Schwartz
-#### Start date: 10/31/2017
-#### End date: 11/5/2017  
+```{r}
+articleID <- "3-4-2015_PS" # insert the article ID code here e.g., "10-3-2015_PS"
+reportType <- 'pilot'
+pilotNames <- "Erik Santoro, Tysen Dauer, Jaclyn Schwartz" # insert the pilot's name here e.g., "Tom Hardwicke". If there are multiple pilots enter both names in a character string e.g., "Tom Hardwicke, Bob Dylan"
+copilotNames <- "" # insert the co-pilot's name here e.g., "Michael Frank". If there are multiple co-pilots enter both names in a character string e.g., "Tom Hardwicke, Bob Dylan"
+pilotTTC <- 720 # insert the pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
+copilotTTC <- NA # insert the co- pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
+pilotStartDate <- as.Date("10/31/2017", format = "%m/%d/%y") # insert the pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+copilotStartDate <- as.Date("", format = "%m/%d/%y") # insert the co-pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+completionDate <- as.Date("", format = "%m/%d/%y") # copilot insert the date of final report completion (after any necessary rounds of author assistance) in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+```
 
 -------
 
@@ -43,9 +49,6 @@ library(knitr) # for kable table formating
 library(haven) # import and export 'SPSS', 'Stata' and 'SAS' Files
 library(readxl) # import excel files
 library(CARPSreports) # custom report functions
-```
-
-```{r Load package for repeated measures anova}
 
 library(ez) # for repeated ANOVAs
 library(effsize) #for effect size
@@ -55,6 +58,10 @@ library(afex) #for effect sizes
 library(schoRsch)
 ```
 
+```{r}
+# Prepare report object. This will be updated automatically by the reproCheck function each time values are compared.
+reportObject <- data.frame(dummyRow = TRUE, reportedValue = NA, obtainedValue = NA, valueType = NA, percentageError = NA, comparisonOutcome = NA, eyeballCheck = NA)
+```
 
 ## Step 2: Load data
 
@@ -181,18 +188,11 @@ print(modANOVA)
 
 ```{r Repeated ANOVA Compared Values}
 
-repanova.fstat.comp <- compareValues(reportedValue = 18.9, obtainedValue = 18.63067)
+reportObject <- reproCheck(reportedValue = "18.9", obtainedValue = 18.63067, valueType = 'F')
 
-repanova.dendegreesfreedom.comp <- compareValues(reportedValue = 94, obtainedValue = 92)
+reportObject <- reproCheck(reportedValue = "94", obtainedValue = 92, valueType = 'df')
 
-repanova.pval.comp <- compareValues(reportedValue = .001, obtainedValue = .001, isP=T)
-
-
-repanova.fstat.comp
-repanova.dendegreesfreedom.comp
-repanova.pval.comp
-
-
+reportObject <- reproCheck(reportedValue = ".001", obtainedValue = .001, valueType = 'p')
 
 ```
 
@@ -215,16 +215,11 @@ ttest1.2v1
 
 ```{r Pairwise Findings}
 
-pairwise.1 <- compareValues(reportedValue = .01, obtainedValue = .01, isP=T)
+reportObject <- reproCheck(reportedValue = "<.01", obtainedValue = .01, valueType = 'p', eyeballCheck = TRUE)
 
-pairwise.2 <- compareValues(reportedValue = .01, obtainedValue = .01, isP=T)
+reportObject <- reproCheck(reportedValue = "<.01", obtainedValue = .01, valueType = 'p', eyeballCheck = TRUE)
 
-pairwise.3 <- compareValues(reportedValue = .01, obtainedValue = .01, isP=T)
-
-
-pairwise.1
-pairwise.2
-pairwise.3
+reportObject <- reproCheck(reportedValue = "<.01", obtainedValue = .01, valueType = 'p', eyeballCheck = TRUE)
 
 ```
 
@@ -261,21 +256,13 @@ ttest1.2v1
 
 ```{r Effect Size and P Value Findings}
 
-understatement.effectsize <- compareValues(reportedValue = .67, obtainedValue = .6663313)
+reportObject <- reproCheck(reportedValue = ".67", obtainedValue = .6663313, valueType = 'd')
 
-understatement.pvalue <- compareValues(reportedValue = .006, obtainedValue = .00205, isP=T)
+reportObject <- reproCheck(reportedValue = ".006", obtainedValue = .00205, valueType = 'p')
 
-overstatement.effectsize <- compareValues(reportedValue = .8, obtainedValue = 0.7959338, isP=T)
+reportObject <- reproCheck(reportedValue = ".8", obtainedValue = 0.7959338, valueType = 'p')
 
-overstatement.pvalue <- compareValues(reportedValue = .001, obtainedValue = .0003054, isP=T)
-
-
-
-understatement.effectsize
-understatement.pvalue
-overstatement.effectsize
-overstatement.pvalue
-
+reportObject <- reproCheck(reportedValue = ".001", obtainedValue = .0003054, valueType = 'p')
 
 ```
 
@@ -306,49 +293,77 @@ pctchngtotal
 
 ```{r Confidence Interval Findings}
 
-understatement.pctchng <- compareValues(reportedValue = 6, obtainedValue = 6.541667)
-understatement.confidence.lower <- compareValues(reportedValue = 2, obtainedValue = 2.510187)
-understatement.confidence.upper <- compareValues(reportedValue = 11, obtainedValue = 10.573147)
+reportObject <- reproCheck(reportedValue = "6", obtainedValue = 6.541667, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = "2", obtainedValue = 2.510187, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = "11", obtainedValue = 10.573147, valueType = 'ci')
 
-overstatement.pctchng <- compareValues(reportedValue = 7, obtainedValue = 6.875)
-overstatement.confidence.lower <- compareValues(reportedValue = 3, obtainedValue = 3.327993)
-overstatement.confidence.upper <- compareValues(reportedValue = 11, obtainedValue = 10.422007)
+reportObject <- reproCheck(reportedValue = "7", obtainedValue = 6.875, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = "3", obtainedValue = 3.327993, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = "11", obtainedValue = 10.422007, valueType = 'ci')
 
-pctchngtotal <- compareValues(reportedValue = 13, obtainedValue = 13.41667)
-
-understatement.pctchng
-understatement.confidence.lower
-understatement.confidence.upper
-overstatement.pctchng
-overstatement.confidence.lower
-overstatement.confidence.upper
-pctchngtotal
-
+reportObject <- reproCheck(reportedValue = "13", obtainedValue = 13.41667, valueType = 'mean')
 ```
 
 ## Step 5: Conclusion
 
 In this computational reproducibility, the findings of the original paper were largely confirmed — that there was a large effect of manipulated perception on pain perception on both the understating and overstating condition. In addition, though there were minor or major numerical discrepancies across the findings, these did not affect any statistical conclusions. There are still several questions I have (below).
 
-```{r carpsReport}
-carpsReport(Report_Type = "pilot", 
-             Article_ID = "CARPS_3-4-2015_PS", 
-             Insufficient_Information_Errors = 0, 
-             Decision_Errors = 0, 
-             Major_Numerical_Errors = 4, 
-             Time_to_Complete = 720, 
-             Author_Assistance = FALSE)
-```
-
-
 First of all, my repeated measures ANOVA yielded nearly the same F statistic (18.9 in paper vs 18.6 calculated) with the same p-value (<0.01); please note, however, that the degrees of freedom in my calculation were off (94 in paper and 92 calculated), and I could not figure out how to calculate the effect size. Second of all, all pairwise comparisons among the three conditions were the same (p<0.01); note that the author did not specify the type of pair-wise and I just assumed t-tests (rather than assuming insufficient information). Third of all, while the effect sizes for understating vision (virtual rotation was 80% of actual rotation) and overstating vision (virtual rotation was 80% of actual rotation), the p-values had major errors (0.006 vs 0.002; 0.001 vs 0.0003) that did not affect statistical conclusions (e.g. can still conclude the effect was significant). Fourth of all, while there were several errors in changes in range of motion — a major numerical error in the estimation of the percentage increase in range of motion for the understating range of motion condition (6% paper vs. 6.5% calculated), a minor numerical error in the lower confidence interval estimate for the range of motion increase for the understating condition (2% paper vs. 2.5% calculation), and a minor numerical error int he upper confidence interval estimate for the range of motion decrease for the overstating condition (11% paper vs. 10.4% calculation) — these did not effect the general conclusions for percentage changes and confidence intervals. Please note that I did not record the repeated measures ANOVA errors as insufficient errors, but as minor numerical errors. 
 
 My outstanding questions are: (a) how did the authors get 94 not 92 degrees of freedom?, (b) why did they seemingly use direction of rotation as a between-subjects variable, (c) how do you extract effect size for a repeated measures anova, and (d) why did the numerical errors that happened happen?
 
-Tom — I would love to be kept informed about what you find, and help out where I can!
+```{r}
+Author_Assistance = FALSE # was author assistance provided? (if so, enter TRUE)
 
+Insufficient_Information_Errors <- 0 # how many discrete insufficient information issues did you encounter?
 
-[This function will output information about the package versions used in this report:]
+# Assess the causal locus (discrete reproducibility issues) of any reproducibility errors. Note that there doesn't necessarily have to be a one-to-one correspondance between discrete reproducibility issues and reproducibility errors. For example, it could be that the original article neglects to mention that a Greenhouse-Geisser correct was applied to ANOVA outcomes. This might result in multiple reproducibility errors, but there is a single causal locus (discrete reproducibility issue).
+
+locus_typo <- NA # how many discrete issues did you encounter that related to typographical errors?
+locus_specification <- NA # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
+locus_analysis <- NA # how many discrete issues did you encounter that related to errors in the authors' original analyses?
+locus_data <- NA # how many discrete issues did you encounter that related to errors in the data files shared by the authors?
+locus_unidentified <- NA # how many discrete issues were there for which you could not identify the cause
+
+Affects_Conclusion <- NA # Do any reproducibility issues encounter appear to affect the conclusions made in the original article? This is a subjective judgement, but you should taking into account multiple factors, such as the presence/absence of decision errors, the number of target outcomes that could not be reproduced, the type of outcomes that could or could not be reproduced, the difference in magnitude of effect sizes, and the predictions of the specific hypothesis under scrutiny.
+```
+
+```{r}
+reportObject <- reportObject %>%
+  filter(dummyRow == FALSE) %>% # remove the dummy row
+  select(-dummyRow) %>% # remove dummy row designation
+  mutate(articleID = articleID) %>% # add the articleID 
+  select(articleID, everything()) # make articleID first column
+
+# decide on final outcome
+if(any(reportObject$comparisonOutcome != "MATCH") | Insufficient_Information_Errors > 0){
+  finalOutcome <- "Failure without author assistance"
+  if(Author_Assistance == T){
+    finalOutcome <- "Failure despite author assistance"
+  }
+}else{
+  finalOutcome <- "Success without author assistance"
+  if(Author_Assistance == T){
+    finalOutcome <- "Success with author assistance"
+  }
+}
+
+# collate report extra details
+reportExtras <- data.frame(articleID, pilotNames, copilotNames, pilotTTC, copilotTTC, pilotStartDate, copilotStartDate, completionDate, Author_Assistance, finalOutcome, Insufficient_Information_Errors, locus_typo, locus_specification, locus_analysis, locus_data, locus_unidentified)
+
+# save report objects
+if(reportType == "pilot"){
+  write_csv(reportObject, "pilotReportDetailed.csv")
+  write_csv(reportExtras, "pilotReportExtras.csv")
+}
+
+if(reportType == "final"){
+  write_csv(reportObject, "finalReportDetailed.csv")
+  write_csv(reportExtras, "finalReportExtras.csv")
+}
+```
+
+# Session information
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
