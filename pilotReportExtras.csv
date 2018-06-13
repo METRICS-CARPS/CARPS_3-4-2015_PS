@@ -1,2 +1,2 @@
 articleID,pilotNames,copilotNames,pilotTTC,copilotTTC,pilotStartDate,copilotStartDate,completionDate,Author_Assistance,finalOutcome,Insufficient_Information_Errors,locus_typo,locus_specification,locus_analysis,locus_data,locus_unidentified
-3-4-2015_PS,"Erik Santoro, Tysen Dauer, Jaclyn Schwartz",,720,NA,2020-10-31,NA,NA,FALSE,Failure without author assistance,0,NA,NA,NA,NA,NA
+3-4-2015_PS,"Erik Santoro, Tysen Dauer, Jaclyn Schwartz",Erica Yoon,720,120,2017-10-31,2018-06-13,2018-06-13,FALSE,Failure without author assistance,0,NA,1,2,NA,NA
