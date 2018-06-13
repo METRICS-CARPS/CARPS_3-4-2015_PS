@@ -14,9 +14,9 @@ pilotNames <- "Erik Santoro, Tysen Dauer, Jaclyn Schwartz" # insert the pilot's 
 copilotNames <- "Erica Yoon" # insert the co-pilot's name here e.g., "Michael Frank". If there are multiple co-pilots enter both names in a character string e.g., "Tom Hardwicke, Bob Dylan"
 pilotTTC <- 720 # insert the pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
 copilotTTC <- 120 # insert the co- pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
-pilotStartDate <- as.Date("10/31/2017", format = "%m/%d/%y") # insert the pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
-copilotStartDate <- as.Date("06/13/2018", format = "%m/%d/%y") # insert the co-pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
-completionDate <- as.Date("", format = "%m/%d/%y") # copilot insert the date of final report completion (after any necessary rounds of author assistance) in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+pilotStartDate <- as.Date("10/31/17", format = "%m/%d/%y") # insert the pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+copilotStartDate <- as.Date("06/13/18", format = "%m/%d/%y") # insert the co-pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+completionDate <- as.Date("06/13/18", format = "%m/%d/%y") # copilot insert the date of final report completion (after any necessary rounds of author assistance) in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
 ```
 
 -------
@@ -46,11 +46,8 @@ library(readxl) # import excel files
 library(CARPSreports) # custom report functions
 
 library(ez) # for repeated ANOVAs
-library(effsize) #for effect size
-library(compute.es) #for effect size
 library(lsr) #for cohen's d
-library(afex) #for effect sizes
-library(schoRsch)
+library(MBESS) # for effect size from ezANOVA
 ```
 
 ```{r}
@@ -68,7 +65,7 @@ d <- read.table("data/Bogus visual feedback alters movement_Data.tab", header=TR
 
 ## Step 3: Tidy data
 
-Here, I tidy the data and convert the variables needed in the ANOVA in a proper way.
+Make a long-form data for ANOVA.
 
 
 ```{r Tidy data}
@@ -86,7 +83,7 @@ d.tidy <- d %>%
 
 ### Pre-processing
 
-1 -- For reference, I want to create a tidy table that groups by participant and averages across direction of rotation (e.g. left or right).
+1 -- For reference, make a tidy table that groups by participant and averages across direction of rotation (e.g. left or right).
 
 ```{r Average by condition}
 
@@ -103,7 +100,7 @@ d.comparison <- d %>%
 ### Descriptive statistics
 
 
-1 -- I want to find the means of pain-free range of motion per condition.
+1 -- Here are means of pain-free range of motion per condition.
 
 ```{r Means}
 
@@ -115,11 +112,11 @@ mean1.2 <- mean(d$Condition3_Gain1.2)
 
 ### Inferential statistics
 
-1 -- I create a repeated measures ANOVA using condition as a within subjects variable, and DirectionofRotation as a between subjects variable. This achieves nearly the desired effect size and degrees of freedom, and the correct p value.
+1 -- We create a repeated measures ANOVA using condition as a within subjects variable, and DirectionofRotation as a between subjects variable. This achieves nearly the desired effect size and degrees of freedom, and the correct p value.
 
-I should note that I do not quite understand why DirectionofRotation is a between subjects variable; it seems like it should be another within variabe. However, doing this just yields 46 degrees of freedom (But note that even with DirectionofRotation as a between-subj variable, the df is wrong -- it is 92 instead of 94 as reported). 
+Note that "DirectionofRotation" is described to be a within-, not a between-subjects variable in the report. However, with DirectionofRotation as a within-subj variable, it just yields 46 degrees of freedom (But even with DirectionofRotation as a between-subj variable, the df is wrong -- it is 92 instead of 94 as reported). Below in the Supplemental Section, we included analysis with correct design; statistical significance does not differ.
 
-Original Text: "The repeated measures ANOVA revealed a large overall effect of visual-proprioceptive feedback (condition) on pain-free range of motion F(2, 94) = 18.9, p < .001, ηp 2 = 0.29."
+> The repeated measures ANOVA revealed a large overall effect of visual-proprioceptive feedback (condition) on pain-free range of motion F(2, 94) = 18.9, p < .001, ηp 2 = 0.29. (from Harvie et al. p.388)
 
 ```{r Repeated Measures ANOVA}
 #Repeated Measures ANOVA 
@@ -133,10 +130,11 @@ modANOVA <- ezANOVA(data = d.tidy,
                   between = DirectionofRotation,
                   detailed = TRUE,
                   return_aov = TRUE) #returns aov object, which is supposedly useful for calculating partial eta squared, but I could not figure out
+```
 
+```{r partial_eta_squared}
 # calculating partial eta squared 
 # source: https://groups.google.com/forum/#!topic/ez4r/4CHBP-jlZGY
-
 modANOVA$ANOVA$partialetasquared <- modANOVA$ANOVA$SSn/(modANOVA$ANOVA$SSn+modANOVA$ANOVA$SSd)
 loweretasquared <- c()
 upperetasquared <- c()
@@ -155,144 +153,104 @@ for (cR in 1:nrow(modANOVA$ANOVA)) {
 }
 modANOVA$ANOVA$partialetasquared.lower <- loweretasquared
 modANOVA$ANOVA$partialetasquared.upper <- upperetasquared
-
-print(modANOVA)
-
 ```
 
 ```{r Repeated ANOVA Compared Values}
+reportObject <- reproCheck(reportedValue = "18.9", obtainedValue = modANOVA$ANOVA$F[3], valueType = 'F')
 
-reportObject <- reproCheck(reportedValue = "18.9", obtainedValue = 18.63067, valueType = 'F')
+reportObject <- reproCheck(reportedValue = "94", obtainedValue = modANOVA$ANOVA$DFd[3], valueType = 'df')
 
-reportObject <- reproCheck(reportedValue = "94", obtainedValue = 92, valueType = 'df')
-
-reportObject <- reproCheck(reportedValue = ".001", obtainedValue = .001, valueType = 'p')
-
+reportObject <- reproCheck(reportedValue = "<.001", obtainedValue = modANOVA$ANOVA$p[3], valueType = 'p', eyeballCheck = TRUE)
 ```
 
-2 -- Second, I look at all pairwise compairsons. Since the methodology was not mentioned (e.g. either F-statistic comparisons or t tests), I used t-tests. All were the same, e.g. ; < 0.01.
+2 -- Second, we look at all pairwise comparisons. Since the methodology was not mentioned (e.g. either F-statistic comparisons or t tests), we used t-tests. All were < 0.01. We additionally checked Bonferroni corrected t-tests, and these all also yielded ps < .01.
 
-Original text: "All pairwise comparisons were significant (ps < .01)."
+> All pairwise comparisons were significant (ps < .01). (from Harvie et al. p.388)
 
 ```{r T tests}
-
 ttest0.8v1 <- t.test(d$Condition1_Gain0.8, d$Condition2_Gain1, paired = TRUE)
 ttest0.8v1.2 <- t.test(d$Condition1_Gain0.8, d$Condition3_Gain1.2, paired = TRUE)
 ttest1.2v1 <- t.test(d$Condition3_Gain1.2, d$Condition2_Gain1, paired = TRUE)
 
-ttest0.8v1
-ttest0.8v1.2
-ttest1.2v1
-
 # copilot: bonf
-ttestbonf0.8v1 <- pairwise.t.test(d$Condition1_Gain0.8, d$Condition2_Gain1)
-ttestbonf0.8v1.2 <- pairwise.t.test(d$Condition1_Gain0.8, d$Condition3_Gain1.2, p.adj = "bonf")
-ttestbonf1.2v1 <- pairwise.t.test(d$Condition3_Gain1.2, d$Condition2_Gain1, p.adj = "bonf")
-
-ttestbonf0.8v1
-ttestbonf0.8v1.2
-ttestbonf1.2v1
+ttestbonf <- with(d.tidy, pairwise.t.test(rangeofmotion, condition), paired=TRUE, p.adj = "bonf")
 ```
 
 
 ```{r Pairwise Findings}
 
-reportObject <- reproCheck(reportedValue = "<.01", obtainedValue = .01, valueType = 'p', eyeballCheck = TRUE)
+reportObject <- reproCheck(reportedValue = "<.01", obtainedValue = ttest0.8v1$p.value, valueType = 'p', eyeballCheck = TRUE)
 
-reportObject <- reproCheck(reportedValue = "<.01", obtainedValue = .01, valueType = 'p', eyeballCheck = TRUE)
+reportObject <- reproCheck(reportedValue = "<.01", obtainedValue = ttest0.8v1.2$p.value, valueType = 'p', eyeballCheck = TRUE)
 
-reportObject <- reproCheck(reportedValue = "<.01", obtainedValue = .01, valueType = 'p', eyeballCheck = TRUE)
+reportObject <- reproCheck(reportedValue = "<.01", obtainedValue = ttest1.2v1$p.value, valueType = 'p', eyeballCheck = TRUE)
 
 ```
 
 
-3 -- Third, I compare effect sizes and related p values. While the effect sizes were right the p values had major numerical errors; that said, there was no change in inference of stasticial power. In other words, there was a stastically significant difference between understating and normal as well as between overstating and normal
+3 -- Third, we compare effect sizes and related p values. While the effect sizes were right, the p values had major numerical errors; that said, there was no change in the statistical inference conclusion. In other words, there was a stastically significant difference between understating and normal as well as between overstating and normal. 
 
-Original Text: "As shown in Figure 3, when vision understated true rotation, pain-free range of motion was increased, and this was a medium-sized effect, p = .006, d = 0.67; when vision overstated true rotation, pain-free range of motion was decreased, and this was a large effect, p = .001, d = 0.80."
+However, note that the reported values were reproduced using independent samples t-test, which is a wrong choice for this dataset (because responses came from the same, not different, participants). Paired-sample t-tests report different Cohen's d values (see Supplemental Section below).
+
+> As shown in Figure 3, when vision understated true rotation, pain-free range of motion was increased, and this was a medium-sized effect, p = .006, d = 0.67; when vision overstated true rotation, pain-free range of motion was decreased, and this was a large effect, p = .001, d = 0.80.  (from Harvie et al. p.388-9)
 
 
 ```{r Effect size and Corresponding T Tests to Get P Values}
+# condition 1 vs. 2
+ttest_cohen1vs2 <- independentSamplesTTest(rangeofmotion ~ condition, d.tidy %>% filter(condition != "Condition3_Gain1.2"))
 
-#Effect Size
-
-d0.8v1 <- cohensD(d$Condition1_Gain0.8, d$Condition2_Gain1) # vision understating true rotation
-
-d1v1.2 <- cohensD(d$Condition3_Gain1.2, d$Condition2_Gain1) # vision overstating true rotation
-
-
-# FOR REFERENCE -- Consolidate by area (aka by means)
-# d0.8v1.consolidated <- cohensD(d.comparison$meancondition1_gain0.8, d.comparison$meancondition2_gain1)
-# d1v1.2.consolidated <- cohensD(d.comparison$meancondition3_gain1.2, d.comparison$meancondition2_gain1)
-
-
-d0.8v1
-ttest0.8v1
-d1v1.2
-ttest1.2v1
-
-
-
+# condition 2 vs. 3
+ttest_cohen2vs3 <- independentSamplesTTest(rangeofmotion ~ condition, d.tidy %>% filter(condition != "Condition1_Gain0.8"))
 ```
 
 
 
 ```{r Effect Size and P Value Findings}
 
-reportObject <- reproCheck(reportedValue = ".67", obtainedValue = .6663313, valueType = 'd')
+reportObject <- reproCheck(reportedValue = ".67", obtainedValue = ttest_cohen1vs2$effect.size, valueType = 'd')
 
-reportObject <- reproCheck(reportedValue = ".006", obtainedValue = .00205, valueType = 'p')
+reportObject <- reproCheck(reportedValue = ".006", obtainedValue = ttest_cohen1vs2$p.value, valueType = 'p')
 
-reportObject <- reproCheck(reportedValue = ".8", obtainedValue = 0.7959338, valueType = 'p')
+reportObject <- reproCheck(reportedValue = ".8", obtainedValue = ttest_cohen2vs3$effect.size, valueType = 'd')
 
-reportObject <- reproCheck(reportedValue = ".001", obtainedValue = .0003054, valueType = 'p')
+reportObject <- reproCheck(reportedValue = ".001", obtainedValue = ttest_cohen2vs3$p.value, valueType = 'p')
 
 ```
 
-4 -- Fourth, I compare the percentage change and confidence intervals. The percentage change for the understatement (e.g. 0.8 vs 1) had a major numerical error, and the confidence interval for the overstatement had a minor numerical error. Overall, however, the same effects were seen.
+4 -- Fourth, we compare the percentage change and confidence intervals. The percentage change for the understatement (e.g. 0.8 vs 1) had a major numerical error, and the confidence interval for the overstatement had a major and a minor numerical errors. Overall, however, the same effects were seen.
 
-Original quote: "Specifically, during visual feedback that understated true rotation, pain-free range of motion was increased by 6% (95% confidence interval, or CI = [2%, 11%]); during visual feedback that overstated true rotation, pain-free range of motion decreased by 7% (95% CI = [3%, 11%]). Therefore, our results show an overall effect of the manipulation of 13%.""
+> Specifically, during visual feedback that understated true rotation, pain-free range of motion was increased by 6% (95% confidence interval, or CI = [2%, 11%]); during visual feedback that overstated true rotation, pain-free range of motion decreased by 7% (95% CI = [3%, 11%]). Therefore, our results show an overall effect of the manipulation of 13%." (from Harvie et al. p.389)
 
 ```{r Percentage Change and Confidence Intervals}
-
-pctchng0.8v1 <- 100*((mean0.8-mean1)/mean1)
-pctchng1.2v1 <- -100*((mean1.2-mean1)/mean1) #use negative 100 as this direction will be lower
-pctchngtotal <- abs(pctchng0.8v1) + abs(pctchng1.2v1)
-
-t.test0.8v1 <- t.test(d$Condition1_Gain0.8,d$Condition2_Gain1)$conf.int
-t.test1.2v1 <- t.test(d$Condition2_Gain1,d$Condition3_Gain1.2)$conf.int
-
 #Vision understated true rotation
-pctchng0.8v1
-t.test0.8v1
+confint_1vs2 <- (ttest_cohen1vs2$conf.int)*100
+mean_1vs2 <- (ttest_cohen1vs2$mean[1] - ttest_cohen1vs2$mean[2])*100
 
 #Vision overstated true rotation
-pctchng1.2v1
-t.test1.2v1
-
-pctchngtotal
-
+confint_2vs3 <- (ttest_cohen2vs3$conf.int)*100
+mean_2vs3 <- (ttest_cohen2vs3$mean[1] - ttest_cohen2vs3$mean[2])*100
 ```
 
 ```{r Confidence Interval Findings}
 
-reportObject <- reproCheck(reportedValue = "6", obtainedValue = 6.541667, valueType = 'mean')
-reportObject <- reproCheck(reportedValue = "2", obtainedValue = 2.510187, valueType = 'ci')
-reportObject <- reproCheck(reportedValue = "11", obtainedValue = 10.573147, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = "6", obtainedValue = mean_1vs2, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = "2", obtainedValue = confint_1vs2[1], valueType = 'ci')
+reportObject <- reproCheck(reportedValue = "11", obtainedValue = confint_1vs2[2], valueType = 'ci')
 
-reportObject <- reproCheck(reportedValue = "7", obtainedValue = 6.875, valueType = 'mean')
-reportObject <- reproCheck(reportedValue = "3", obtainedValue = 3.327993, valueType = 'ci')
-reportObject <- reproCheck(reportedValue = "11", obtainedValue = 10.422007, valueType = 'ci')
+reportObject <- reproCheck(reportedValue = "7", obtainedValue = mean_2vs3, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = "3", obtainedValue = confint_2vs3[1], valueType = 'ci')
+reportObject <- reproCheck(reportedValue = "11", obtainedValue = confint_2vs3[2], valueType = 'ci')
 
-reportObject <- reproCheck(reportedValue = "13", obtainedValue = 13.41667, valueType = 'mean')
+reportObject <- reproCheck(reportedValue = "13", obtainedValue = mean_1vs2+mean_2vs3, valueType = 'mean')
 ```
 
 ## Step 5: Conclusion
 
-In this computational reproducibility, the findings of the original paper were largely confirmed — that there was a large effect of manipulated perception on pain perception on both the understating and overstating condition. In addition, though there were minor or major numerical discrepancies across the findings, these did not affect any statistical conclusions. There are still several questions I have (below).
+In this computational reproducibility, the findings of the original paper were largely confirmed — that there was a large effect of manipulated perception on pain perception on both the understating and overstating condition. In addition, though there were minor or major numerical discrepancies across the findings, these did not affect any statistical conclusions. There are still several questions we have (below).
 
-First of all, my repeated measures ANOVA yielded nearly the same F statistic (18.9 in paper vs 18.6 calculated) with the same p-value (<0.01); please note, however, that the degrees of freedom in my calculation were off (94 in paper and 92 calculated), and I could not figure out how to calculate the effect size. Second of all, all pairwise comparisons among the three conditions were the same (p<0.01); note that the author did not specify the type of pair-wise and I just assumed t-tests (rather than assuming insufficient information). Third of all, while the effect sizes for understating vision (virtual rotation was 80% of actual rotation) and overstating vision (virtual rotation was 80% of actual rotation), the p-values had major errors (0.006 vs 0.002; 0.001 vs 0.0003) that did not affect statistical conclusions (e.g. can still conclude the effect was significant). Fourth of all, while there were several errors in changes in range of motion — a major numerical error in the estimation of the percentage increase in range of motion for the understating range of motion condition (6% paper vs. 6.5% calculated), a minor numerical error in the lower confidence interval estimate for the range of motion increase for the understating condition (2% paper vs. 2.5% calculation), and a minor numerical error int he upper confidence interval estimate for the range of motion decrease for the overstating condition (11% paper vs. 10.4% calculation) — these did not effect the general conclusions for percentage changes and confidence intervals. Please note that I did not record the repeated measures ANOVA errors as insufficient errors, but as minor numerical errors. 
+First of all, our repeated measures ANOVA yielded nearly the same F statistic (18.9 in paper vs 18.6 calculated) with the same p-value (<0.01); please note, however, that the degrees of freedom in our calculation were off (94 in paper and 92 calculated). Second of all, all pairwise comparisons among the three conditions were the same as reported (p<0.01); note that the author did not specify the type of pair-wise and we just assumed t-tests (rather than assuming insufficient information). Third of all, while the effect sizes for understating vision (virtual rotation was 80% of actual rotation) and overstating vision (virtual rotation was 80% of actual rotation), the p-values had major errors (0.006 vs 0.002; 0.001 vs 0.0003) that did not affect statistical conclusions (i.e., can still conclude the effect was significant). Fourth of all, while there were several errors in changes in range of motion — a major numerical error in the estimation of the percentage increase in range of motion for the understating range of motion condition (6% paper vs. 7% calculated), a minor numerical error in the lower confidence interval estimate for the range of motion increase for the understating condition (2% paper vs. 3% calculation), and a minor numerical error int he upper confidence interval estimate for the range of motion decrease for the overstating condition (11% paper vs. 10.4% calculation) — these did not effect the general conclusions for percentage changes and confidence intervals and plausibly come from minor rounding issues. Please note that we did not record the repeated measures ANOVA errors as insufficient errors, but as minor numerical errors. 
 
-My outstanding questions are: (a) how did the authors get 94 not 92 degrees of freedom?, (b) why did they seemingly use direction of rotation as a between-subjects variable, (c) how do you extract effect size for a repeated measures anova, and (d) why did the numerical errors that happened happen?
+Some outstanding questions are: (a) how did the authors get 94 not 92 degrees of freedom?, (b) why did they seemingly use direction of rotation as a between-subjects variable, and (c) why did the numerical errors that happened happen?
 
 ```{r}
 Author_Assistance = FALSE # was author assistance provided? (if so, enter TRUE)
@@ -302,8 +260,8 @@ Insufficient_Information_Errors <- 0 # how many discrete insufficient informatio
 # Assess the causal locus (discrete reproducibility issues) of any reproducibility errors. Note that there doesn't necessarily have to be a one-to-one correspondance between discrete reproducibility issues and reproducibility errors. For example, it could be that the original article neglects to mention that a Greenhouse-Geisser correct was applied to ANOVA outcomes. This might result in multiple reproducibility errors, but there is a single causal locus (discrete reproducibility issue).
 
 locus_typo <- NA # how many discrete issues did you encounter that related to typographical errors?
-locus_specification <- NA # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
-locus_analysis <- NA # how many discrete issues did you encounter that related to errors in the authors' original analyses?
+locus_specification <- 1 # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
+locus_analysis <- 2 # how many discrete issues did you encounter that related to errors in the authors' original analyses?
 locus_data <- NA # how many discrete issues did you encounter that related to errors in the data files shared by the authors?
 locus_unidentified <- NA # how many discrete issues were there for which you could not identify the cause
 
@@ -349,4 +307,32 @@ if(reportType == "final"){
 
 ```{r session_info, include=TRUE, echo=TRUE, results='markup'}
 devtools::session_info()
+```
+
+# Supplemental Section
+
+As pointed out above, the authors seem to have made a few wrong analysis choices. 
+
+(1) The "direction of rotation" seems to have been analyzed as a between-subjects variable in ANOVA, but it should be a within-subjects variable.
+
+(2) t-tests and Cohen's d were seemingly computed based on the assumption of independent samples instead of paired samples. 
+
+We provide the code for the correct analyses below. The conclusions based on statistical significance do not differ, but Cohen's d values become smaller. 
+
+```{r correct_ana}
+# ANOVA
+modANOVA_corr <- ezANOVA(data = d.tidy,
+                  dv = rangeofmotion,
+                  wid = Participant,
+                  within = .(condition, DirectionofRotation),
+                  detailed = TRUE,
+                  return_aov = TRUE) #returns aov object, which is supposedly useful for calculating partial eta squared, but I could not figure out
+
+print(modANOVA_corr)
+
+
+# t-test and cohen's d
+pairedSamplesTTest(~Condition1_Gain0.8 + Condition2_Gain1, data=d)
+pairedSamplesTTest(~Condition3_Gain1.2 + Condition2_Gain1, data=d)
+
 ```
