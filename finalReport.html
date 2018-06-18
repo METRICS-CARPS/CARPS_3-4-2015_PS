@@ -387,7 +387,7 @@ ttest_cohen2vs3 &lt;- pairedSamplesTTest(~Condition3_Gain1.2 + Condition2_Gain1,
 <pre><code>## [1] &quot;MAJOR_ERROR for d. The reported value (0.8) and the obtained value (0.6) differed by 25%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;.001&quot;, obtainedValue = ttest_cohen2vs3$p.value, valueType = 'p')</code></pre>
 <pre><code>## [1] &quot;MAJOR_ERROR for p. The reported value (0.001) and the obtained value (0) differed by 100%. NB obtained value was rounded to 3 decimal places.&quot;</code></pre>
-<p>Interestingly it seems we can reproduce the effect sizes (but still not the p-values) when assuming independent samples, which is a wrong choice for this dataset (because responses came from the same, not different, participants). Paired-sample t-tests report different Cohen’s d values (see Supplemental Section below):</p>
+<p>Interestingly it seems we can reproduce the effect sizes (but still not the p-values) when assuming independent samples, which is the wrong choice for this dataset (because responses came from the same, not different, participants):</p>
 <pre class="r"><code># NB here we 
 # condition 1 vs. 2
 ttest_cohen1vs2 &lt;- independentSamplesTTest(rangeofmotion ~ condition, d.tidy %&gt;% filter(condition != &quot;Condition3_Gain1.2&quot;))
@@ -430,8 +430,9 @@ mean_2vs3 &lt;- (ttest_cohen2vs3$mean[1] - ttest_cohen2vs3$mean[2])*100</code></
 <pre><code>## [1] &quot;MATCH for mean. The reported value (13) and the obtained value (13) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 <p>The percentage change for the understatement (e.g. 0.8 vs 1) had a major numerical error, and the confidence interval for the overstatement had a major and a minor numerical errors.</p>
 </div>
-<div id="step-5-conclusion" class="section level2">
-<h2>Step 5: Conclusion</h2>
+</div>
+<div id="step-5-conclusion" class="section level1">
+<h1>Step 5: Conclusion</h1>
 <p>In this reproducibility check we were able to reproduce Figure 3 but ran into difficulties reproducing some of the inferential statistics.</p>
 <p>We have contacted the authors to clarify the specification of the ANOVA because we cannot reproduce the reported degrees of freedom: (2,94). If this is a repeated measures ANOVA with a single 3-level IV and 24 participants, the degrees of freedom should be: (2,46). We hope that clarifying this issue might resolve the downstream reproducibility issues.</p>
 <pre class="r"><code>Author_Assistance = FALSE # was author assistance provided? (if so, enter TRUE)
@@ -486,7 +487,6 @@ if(reportType == &quot;final&quot;){
   write_csv(reportObject, &quot;finalReportDetailed.csv&quot;)
   write_csv(reportExtras, &quot;finalReportExtras.csv&quot;)
 }</code></pre>
-</div>
 </div>
 <div id="session-information" class="section level1">
 <h1>Session information</h1>

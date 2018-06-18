@@ -211,7 +211,7 @@ reportObject <- reproCheck(reportedValue = ".001", obtainedValue = ttest_cohen2v
 
 ```
 
-Interestingly it seems we can reproduce the effect sizes (but still not the p-values) when assuming independent samples, which is a wrong choice for this dataset (because responses came from the same, not different, participants). Paired-sample t-tests report different Cohen's d values (see Supplemental Section below):
+Interestingly it seems we can reproduce the effect sizes (but still not the p-values) when assuming independent samples, which is the wrong choice for this dataset (because responses came from the same, not different, participants):
 
 ```{r Effect size and Corresponding T Tests to Get P Values with independent samples assumed}
 
@@ -263,7 +263,7 @@ reportObject <- reproCheck(reportedValue = "13", obtainedValue = mean_1vs2+mean_
 
 The percentage change for the understatement (e.g. 0.8 vs 1) had a major numerical error, and the confidence interval for the overstatement had a major and a minor numerical errors.
 
-## Step 5: Conclusion
+# Step 5: Conclusion
 
 In this reproducibility check we were able to reproduce Figure 3 but ran into difficulties reproducing some of the inferential statistics.
 
