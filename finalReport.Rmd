@@ -56,7 +56,7 @@ reportObject <- data.frame(dummyRow = TRUE, reportedValue = NA, obtainedValue = 
 
 # Step 2: Load data
 
-According to the author (email correspondence), different normalization procedures were used for the ANOVA and t-tests. For ANOVA, the authors  "transformed data for each participant to a proportion of the average range of motion demonstrated in the neutral condition". For t-tests, the authors normalised each participants data to an average of the three conditions.
+We initially encountered reproducibility issues and contacted the authors for assistance. According to the author (email correspondence), different normalization procedures were used for the descriptive statistics, ANOVA, and t-tests (this was not reported in the paper). For ANOVA and descriptive statistics, the authors "transformed data for each participant to a proportion of the average range of motion demonstrated in the neutral condition". For t-tests, the authors normalised each participants data "to an average of the three conditions". Below we prepare separate data sets using each of the normalization procedures.
 
 ```{r Load data}
 d <- read_sav("data/BogusVisualFeedbackData.sav")
@@ -144,7 +144,7 @@ reportObject <- reproCheck(reportedValue = "figure", obtainedValue = ci1.2[2], v
 
 ## Inferential statistics
 
-First, we look at ANOVA. Note that, according to the author (in an email correspondence), each participant x direction of rotation was considered to be a unique case.
+First, we look at the ANOVA. Note that, according to the author (in an email correspondence), each participant x direction of rotation was considered to be a unique case. This means the unit of analysis is different from the descriptive statistics and the t-tests below (where the unit of analysis is an idnvidual participant). This was not specified in the paper.
 
 > The repeated measures ANOVA revealed a large overall effect of visual-proprioceptive feedback (condition) on pain-free range of motion F(2, 94) = 18.9, p < .001, ηp 2 = 0.29. (from Harvie et al. p.388)
 
@@ -170,9 +170,9 @@ reportObject <- reproCheck(reportedValue = "<.001", obtainedValue = aov.out$anov
 reportObject <- reproCheck(reportedValue = "0.29", obtainedValue = aov.out$anova_table$pes, valueType = 'pes')
 ```
 
-All the values match up.
+All the values match up when we run the analysis as specified in the author's correspondance.
 
-Now, we look at all pairwise comparisons. We used t-tests, which were used for the pairwise comparisons, as confirmed by the authors in an email correspondence. Note that the values used are different from those used for ANOVA, because they are proportions of average rating across three conditions for each participant. All were < 0.01. We additionally checked Bonferroni corrected t-tests, and these all also yielded ps < .01.
+Now, we look at all pairwise comparisons. The statistical test was not specified in the paper. However, the authors confirmed in  email correspondence that they used t-tests. Note that the authors also informed us that the values used in this analysis are different from those used for the descriptive statistics and ANOVA, because they are normalised to the average rating across three conditions for each participant.
 
 > All pairwise comparisons were significant (ps < .01). (from Harvie et al. p.388)
 
@@ -181,7 +181,6 @@ ttest0.8v1 <- t.test(d.tidy_ttest$Condition1_Gain0.8, d.tidy_ttest$Condition2_Ga
 ttest0.8v1.2 <- t.test(d.tidy_ttest$Condition1_Gain0.8, d.tidy_ttest$Condition3_Gain1.2, paired = TRUE)
 ttest1.2v1 <- t.test(d.tidy_ttest$Condition3_Gain1.2, d.tidy_ttest$Condition2_Gain1.0, paired = TRUE)
 ```
-
 
 ```{r Pairwise Findings}
 
@@ -193,10 +192,9 @@ reportObject <- reproCheck(reportedValue = "<.01", obtainedValue = ttest1.2v1$p.
 
 ```
 
-Now, we compare effect sizes and related p values.
+Now, we compare effect sizes and related p values:
 
 > As shown in Figure 3, when vision understated true rotation, pain-free range of motion was increased, and this was a medium-sized effect, p = .006, d = 0.67; when vision overstated true rotation, pain-free range of motion was decreased, and this was a large effect, p = .001, d = 0.80.  (from Harvie et al. p.388-9)
-
 
 ```{r Effect size and Corresponding T Tests to Get P Values}
 ttest_cohen1vs2 <- pairedSamplesTTest(formula = ~Condition1_Gain0.8 + Condition2_Gain1.0, data=as.data.frame(d.tidy_ttest))
@@ -204,7 +202,7 @@ ttest_cohen1vs2 <- pairedSamplesTTest(formula = ~Condition1_Gain0.8 + Condition2
 ttest_cohen2vs3 <- pairedSamplesTTest(formula = ~Condition2_Gain1.0 + Condition3_Gain1.2, data=as.data.frame(d.tidy_ttest))
 ```
 
-We cannot reproduce the effect sizes, following the same procedure used by the authors as suggested in email correspondence with them.
+We cannot reproduce the effect sizes:
 
 ```{r}
 tmp <- reproCheck(reportedValue = ".67", obtainedValue = ttest_cohen1vs2$effect.size, valueType = 'd')

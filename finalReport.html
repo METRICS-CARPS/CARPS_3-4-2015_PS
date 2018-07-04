@@ -255,7 +255,7 @@ reportObject &lt;- data.frame(dummyRow = TRUE, reportedValue = NA, obtainedValue
 </div>
 <div id="step-2-load-data" class="section level1">
 <h1>Step 2: Load data</h1>
-<p>According to the author (email correspondence), different normalization procedures were used for the ANOVA and t-tests. For ANOVA, the authors “transformed data for each participant to a proportion of the average range of motion demonstrated in the neutral condition”. For t-tests, the authors normalised each participants data to an average of the three conditions.</p>
+<p>We initially encountered reproducibility issues and contacted the authors for assistance. According to the author (email correspondence), different normalization procedures were used for the descriptive statistics, ANOVA, and t-tests (this was not reported in the paper). For ANOVA and descriptive statistics, the authors “transformed data for each participant to a proportion of the average range of motion demonstrated in the neutral condition”. For t-tests, the authors normalised each participants data “to an average of the three conditions”. Below we prepare separate data sets using each of the normalization procedures.</p>
 <pre class="r"><code>d &lt;- read_sav(&quot;data/BogusVisualFeedbackData.sav&quot;)
 
 d_anova &lt;- d %&gt;%
@@ -342,7 +342,7 @@ mean1.2</code></pre>
 </div>
 <div id="inferential-statistics" class="section level2">
 <h2>Inferential statistics</h2>
-<p>First, we look at ANOVA. Note that, according to the author (in an email correspondence), each participant x direction of rotation was considered to be a unique case.</p>
+<p>First, we look at the ANOVA. Note that, according to the author (in an email correspondence), each participant x direction of rotation was considered to be a unique case. This means the unit of analysis is different from the descriptive statistics and the t-tests below (where the unit of analysis is an idnvidual participant). This was not specified in the paper.</p>
 <blockquote>
 <p>The repeated measures ANOVA revealed a large overall effect of visual-proprioceptive feedback (condition) on pain-free range of motion F(2, 94) = 18.9, p &lt; .001, ηp 2 = 0.29. (from Harvie et al. p.388)</p>
 </blockquote>
@@ -363,8 +363,8 @@ aov.out &lt;- aov_ez(data = d.tidy_anova %&gt;%
 <pre><code>## [1] &quot;MATCH for p. Eyeball comparison only.&quot;</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;0.29&quot;, obtainedValue = aov.out$anova_table$pes, valueType = 'pes')</code></pre>
 <pre><code>## [1] &quot;MATCH for pes. The reported value (0.29) and the obtained value (0.29) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
-<p>All the values match up.</p>
-<p>Now, we look at all pairwise comparisons. We used t-tests, which were used for the pairwise comparisons, as confirmed by the authors in an email correspondence. Note that the values used are different from those used for ANOVA, because they are proportions of average rating across three conditions for each participant. All were &lt; 0.01. We additionally checked Bonferroni corrected t-tests, and these all also yielded ps &lt; .01.</p>
+<p>All the values match up when we run the analysis as specified in the author’s correspondance.</p>
+<p>Now, we look at all pairwise comparisons. The statistical test was not specified in the paper. However, the authors confirmed in email correspondence that they used t-tests. Note that the authors also informed us that the values used in this analysis are different from those used for the descriptive statistics and ANOVA, because they are normalised to the average rating across three conditions for each participant.</p>
 <blockquote>
 <p>All pairwise comparisons were significant (ps &lt; .01). (from Harvie et al. p.388)</p>
 </blockquote>
@@ -377,14 +377,14 @@ ttest1.2v1 &lt;- t.test(d.tidy_ttest$Condition3_Gain1.2, d.tidy_ttest$Condition2
 <pre><code>## [1] &quot;MATCH for p. Eyeball comparison only.&quot;</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;&lt;.01&quot;, obtainedValue = ttest1.2v1$p.value, valueType = 'p', eyeballCheck = TRUE)</code></pre>
 <pre><code>## [1] &quot;MATCH for p. Eyeball comparison only.&quot;</code></pre>
-<p>Now, we compare effect sizes and related p values.</p>
+<p>Now, we compare effect sizes and related p values:</p>
 <blockquote>
 <p>As shown in Figure 3, when vision understated true rotation, pain-free range of motion was increased, and this was a medium-sized effect, p = .006, d = 0.67; when vision overstated true rotation, pain-free range of motion was decreased, and this was a large effect, p = .001, d = 0.80. (from Harvie et al. p.388-9)</p>
 </blockquote>
 <pre class="r"><code>ttest_cohen1vs2 &lt;- pairedSamplesTTest(formula = ~Condition1_Gain0.8 + Condition2_Gain1.0, data=as.data.frame(d.tidy_ttest))
 
 ttest_cohen2vs3 &lt;- pairedSamplesTTest(formula = ~Condition2_Gain1.0 + Condition3_Gain1.2, data=as.data.frame(d.tidy_ttest))</code></pre>
-<p>We cannot reproduce the effect sizes, following the same procedure used by the authors as suggested in email correspondence with them.</p>
+<p>We cannot reproduce the effect sizes:</p>
 <pre class="r"><code>tmp &lt;- reproCheck(reportedValue = &quot;.67&quot;, obtainedValue = ttest_cohen1vs2$effect.size, valueType = 'd')</code></pre>
 <pre><code>## [1] &quot;MAJOR_ERROR for d. The reported value (0.67) and the obtained value (0.42) differed by 37.31%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
 <pre class="r"><code>tmp &lt;- reproCheck(reportedValue = &quot;.006&quot;, obtainedValue = ttest_cohen1vs2$p.value, valueType = 'p')</code></pre>
@@ -492,14 +492,14 @@ if(reportType == &quot;final&quot;){
 ## 
 ##  package      * version  date      
 ##  acepack        1.4.1    2016-10-29
-##  afex         * 0.20-2   2018-04-04
+##  afex         * 0.19-1   2018-01-08
 ##  assertthat     0.2.0    2017-04-11
 ##  backports      1.1.2    2017-12-13
 ##  base         * 3.4.3    2017-12-07
 ##  base64enc      0.1-3    2015-07-28
 ##  bindr          0.1      2016-11-13
 ##  bindrcpp     * 0.2      2017-06-17
-##  broom          0.4.3    2017-11-20
+##  broom          0.4.2    2017-02-13
 ##  car            2.1-6    2017-11-19
 ##  CARPSreports * 0.1      2018-06-13
 ##  cellranger     1.1.0    2016-07-27
@@ -512,13 +512,13 @@ if(reportType == &quot;final&quot;){
 ##  colorspace     1.3-2    2016-12-14
 ##  compiler       3.4.3    2017-12-07
 ##  crayon         1.3.4    2017-09-16
-##  data.table     1.10.4-3 2017-10-27
+##  data.table     1.11.4   2018-05-27
 ##  datasets     * 3.4.3    2017-12-07
-##  devtools       1.13.5   2018-02-18
-##  digest         0.6.12   2017-01-27
+##  devtools       1.13.6   2018-06-27
+##  digest         0.6.15   2018-01-28
 ##  dplyr        * 0.7.4    2017-09-28
-##  emmeans      * 1.2.1    2018-05-21
-##  estimability   1.3      2018-02-11
+##  emmeans      * 1.1      2018-01-10
+##  estimability   1.2      2016-11-19
 ##  evaluate       0.10.1   2017-06-24
 ##  ez           * 4.4-0    2016-11-02
 ##  forcats      * 0.2.0    2017-01-23
@@ -532,9 +532,9 @@ if(reportType == &quot;final&quot;){
 ##  gridExtra      2.3      2017-09-09
 ##  gtable         0.2.0    2016-02-26
 ##  haven        * 1.1.0    2017-07-09
-##  Hmisc          4.0-3    2017-05-02
+##  Hmisc          4.1-1    2018-01-03
 ##  hms            0.4.0    2017-11-23
-##  htmlTable      1.11.0   2017-12-01
+##  htmlTable      1.11.2   2018-01-20
 ##  htmltools      0.3.6    2017-04-28
 ##  htmlwidgets    0.9      2017-07-10
 ##  httr           1.3.1    2017-08-20
@@ -543,7 +543,7 @@ if(reportType == &quot;final&quot;){
 ##  lattice        0.20-35  2017-03-25
 ##  latticeExtra   0.6-28   2016-02-09
 ##  lazyeval       0.2.1    2017-10-29
-##  lme4         * 1.1-15   2017-12-21
+##  lme4         * 1.1-14   2017-09-27
 ##  lmerTest       2.0-36   2017-11-30
 ##  lsr          * 0.5      2015-03-02
 ##  lubridate      1.7.1    2017-11-03
@@ -560,16 +560,16 @@ if(reportType == &quot;final&quot;){
 ##  modeltools     0.2-21   2013-09-02
 ##  multcomp       1.4-8    2017-11-08
 ##  munsell        0.4.3    2016-02-13
-##  mvtnorm        1.0-6    2017-03-02
+##  mvtnorm        1.0-8    2018-05-31
 ##  nlme           3.1-131  2017-02-06
 ##  nloptr         1.0.4    2014-08-04
 ##  nnet           7.3-12   2016-02-02
 ##  parallel       3.4.3    2017-12-07
 ##  pbkrtest       0.4-7    2017-03-15
-##  pillar         1.2.3    2018-05-25
+##  pillar         1.1.0    2018-01-14
 ##  pkgconfig      2.0.1    2017-03-21
 ##  plyr           1.8.4    2016-06-08
-##  psych          1.7.8    2017-09-09
+##  psych          1.7.3.21 2017-03-22
 ##  purrr        * 0.2.4    2017-10-18
 ##  quantreg       5.34     2017-10-25
 ##  R6             2.2.2    2017-06-17
@@ -577,11 +577,11 @@ if(reportType == &quot;final&quot;){
 ##  Rcpp           0.12.17  2018-05-18
 ##  readr        * 1.1.1    2017-05-16
 ##  readxl       * 1.1.0    2018-04-20
-##  reshape2       1.4.2    2016-10-22
-##  rlang          0.2.1    2018-05-30
-##  rmarkdown      1.8      2017-11-17
+##  reshape2       1.4.3    2017-12-11
+##  rlang          0.2.0    2018-02-20
+##  rmarkdown      1.9      2018-03-01
 ##  rpart          4.1-11   2017-03-13
-##  rprojroot      1.2      2017-01-16
+##  rprojroot      1.3-2    2018-01-03
 ##  rstudioapi     0.7      2017-09-07
 ##  rvest          0.3.2    2016-06-17
 ##  sandwich       2.4-0    2017-07-26
@@ -600,68 +600,68 @@ if(reportType == &quot;final&quot;){
 ##  tidyverse    * 1.2.1    2017-11-14
 ##  tools          3.4.3    2017-12-07
 ##  utils        * 3.4.3    2017-12-07
-##  withr          2.1.0    2017-11-01
-##  xml2           1.1.1    2017-01-24
+##  withr          2.1.2    2018-04-23
+##  xml2           1.2.0    2018-01-24
 ##  xtable         1.8-2    2016-02-05
-##  yaml           2.1.19   2018-05-01
+##  yaml           2.1.17   2018-02-27
 ##  zoo            1.8-1    2018-01-08
 ##  source                                     
-##  cran (@1.4.1)                              
-##  CRAN (R 3.4.4)                             
 ##  CRAN (R 3.4.0)                             
-##  cran (@1.1.2)                              
+##  CRAN (R 3.4.3)                             
+##  cran (@0.2.0)                              
+##  CRAN (R 3.4.3)                             
 ##  local                                      
 ##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.2)                             
+##  cran (@0.1)                                
+##  cran (@0.2)                                
+##  cran (@0.4.2)                              
 ##  CRAN (R 3.4.3)                             
-##  Github (METRICS-CARPS/CARPSreports@95b6979)
-##  CRAN (R 3.4.0)                             
-##  cran (@1.8.5)                              
+##  Github (METRICS-CARPS/CARPSreports@8259d04)
+##  cran (@1.1.0)                              
 ##  CRAN (R 3.4.2)                             
+##  cran (@1.0.0)                              
 ##  CRAN (R 3.4.3)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.3)                             
 ##  CRAN (R 3.4.3)                             
 ##  cran (@1.3-2)                              
 ##  local                                      
-##  CRAN (R 3.4.1)                             
-##  cran (@1.10.4-)                            
+##  cran (@1.3.4)                              
+##  cran (@1.11.4)                             
 ##  local                                      
+##  CRAN (R 3.4.4)                             
+##  cran (@0.6.15)                             
+##  cran (@0.7.4)                              
 ##  CRAN (R 3.4.3)                             
 ##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.2)                             
-##  CRAN (R 3.4.4)                             
-##  CRAN (R 3.4.3)                             
 ##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.0)                             
+##  cran (@0.2.0)                              
 ##  CRAN (R 3.4.3)                             
-##  cran (@1.2-2)                              
+##  CRAN (R 3.4.1)                             
 ##  cran (@2.2.1)                              
-##  CRAN (R 3.4.2)                             
+##  cran (@1.2.0)                              
 ##  local                                      
 ##  local                                      
 ##  local                                      
 ##  CRAN (R 3.4.1)                             
 ##  cran (@0.2.0)                              
-##  CRAN (R 3.4.1)                             
-##  cran (@4.0-3)                              
+##  cran (@1.1.0)                              
 ##  CRAN (R 3.4.3)                             
-##  cran (@1.11.0)                             
+##  cran (@0.4.0)                              
+##  CRAN (R 3.4.3)                             
 ##  CRAN (R 3.4.0)                             
-##  cran (@0.9)                                
+##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.1)                             
 ##  CRAN (R 3.4.0)                             
 ##  cran (@1.20)                               
 ##  CRAN (R 3.4.3)                             
-##  cran (@0.6-28)                             
+##  CRAN (R 3.4.0)                             
 ##  cran (@0.2.1)                              
-##  CRAN (R 3.4.3)                             
+##  CRAN (R 3.4.2)                             
 ##  CRAN (R 3.4.3)                             
 ##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.2)                             
+##  cran (@1.7.1)                              
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.3)                             
 ##  CRAN (R 3.4.3)                             
@@ -670,35 +670,35 @@ if(reportType == &quot;final&quot;){
 ##  local                                      
 ##  CRAN (R 3.4.3)                             
 ##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.1)                             
+##  cran (@1.5-5)                              
+##  cran (@0.1.1)                              
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.2)                             
 ##  cran (@0.4.3)                              
-##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.4)                             
 ##  CRAN (R 3.4.3)                             
 ##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.3)                             
 ##  local                                      
 ##  CRAN (R 3.4.0)                             
-##  cran (@1.2.3)                              
-##  CRAN (R 3.4.0)                             
-##  cran (@1.8.4)                              
-##  CRAN (R 3.4.2)                             
-##  CRAN (R 3.4.2)                             
-##  CRAN (R 3.4.2)                             
-##  CRAN (R 3.4.0)                             
-##  CRAN (R 3.4.0)                             
-##  cran (@0.12.17)                            
-##  CRAN (R 3.4.0)                             
-##  cran (@1.1.0)                              
-##  cran (@1.4.2)                              
-##  cran (@0.2.1)                              
-##  CRAN (R 3.4.2)                             
 ##  CRAN (R 3.4.3)                             
+##  cran (@2.0.1)                              
+##  cran (@1.8.4)                              
+##  cran (@1.7.3.2)                            
+##  cran (@0.2.4)                              
+##  CRAN (R 3.4.2)                             
 ##  CRAN (R 3.4.0)                             
+##  cran (@1.1-2)                              
+##  cran (@0.12.17)                            
+##  cran (@1.1.1)                              
+##  cran (@1.1.0)                              
+##  cran (@1.4.3)                              
+##  cran (@0.2.0)                              
+##  cran (@1.9)                                
+##  CRAN (R 3.4.3)                             
+##  cran (@1.3-2)                              
 ##  CRAN (R 3.4.1)                             
-##  CRAN (R 3.4.0)                             
+##  cran (@0.3.2)                              
 ##  CRAN (R 3.4.1)                             
 ##  cran (@0.5.0)                              
 ##  CRAN (R 3.4.0)                             
@@ -707,18 +707,18 @@ if(reportType == &quot;final&quot;){
 ##  local                                      
 ##  cran (@1.2.2)                              
 ##  cran (@1.3.1)                              
+##  CRAN (R 3.4.0)                             
+##  CRAN (R 3.4.0)                             
 ##  CRAN (R 3.4.3)                             
-##  CRAN (R 3.4.0)                             
-##  cran (@1.4.2)                              
-##  CRAN (R 3.4.2)                             
-##  CRAN (R 3.4.2)                             
-##  CRAN (R 3.4.2)                             
+##  cran (@0.7.2)                              
+##  cran (@0.2.3)                              
+##  cran (@1.2.1)                              
 ##  local                                      
 ##  local                                      
-##  CRAN (R 3.4.2)                             
+##  Github (r-lib/withr@79d7b0d)               
+##  cran (@1.2.0)                              
 ##  CRAN (R 3.4.0)                             
-##  cran (@1.8-2)                              
-##  cran (@2.1.19)                             
+##  cran (@2.1.17)                             
 ##  CRAN (R 3.4.3)</code></pre>
 </div>
 
