@@ -256,18 +256,33 @@ reportObject &lt;- data.frame(dummyRow = TRUE, reportedValue = NA, obtainedValue
 </div>
 <div id="step-2-load-data" class="section level2">
 <h2>Step 2: Load data</h2>
-<pre class="r"><code>d &lt;- read.table(&quot;data/Bogus visual feedback alters movement_Data.tab&quot;, header=TRUE) #need header to be true</code></pre>
+<p>According to the author (email correspondence), different normalization procedures were used for the ANOVA and t-tests. For ANOVA, the authors “transformed data for each participant to a proportion of the average range of motion demonstrated in the neutral condition”. For t-tests, the authors normalised each participants data to an average of the three conditions.</p>
+<pre class="r"><code>d &lt;- read_sav(&quot;data/BogusVisualFeedbackData.sav&quot;)
+
+d_anova &lt;- d %&gt;%
+  select(Participant, DirectionofRotation, Condition1_Gain0.8, Condition2_Gain1, Condition3_Gain1.2)
+
+d_ttest &lt;- d %&gt;%
+  select(Participant, DirectionofRotation, Point.8, One1, One1.2)</code></pre>
 </div>
 <div id="step-3-tidy-data" class="section level2">
 <h2>Step 3: Tidy data</h2>
 <p>Make a long-form data for ANOVA.</p>
 <pre class="r"><code>#Create tidy data set
 
-d.tidy &lt;- d %&gt;%
+d.tidy_anova &lt;- d_anova %&gt;%
   gather(condition,rangeofmotion,starts_with(&quot;condition&quot;)) %&gt;% #the value various condition columns contains are the range of motion
   #Need to convert following columns to proper type
   mutate(Participant = as.factor(Participant),
          condition = as.factor(condition),
+         DirectionofRotation = as.factor(DirectionofRotation))
+
+d.tidy_ttest &lt;- d_ttest %&gt;%
+  rename(Condition1_Gain0.8 = Point.8,
+         Condition2_Gain1.0 = One1,
+         Condition3_Gain1.2 = One1.2
+         ) %&gt;%
+  mutate(Participant = as.factor(Participant),
          DirectionofRotation = as.factor(DirectionofRotation))</code></pre>
 </div>
 <div id="step-4-run-analysis" class="section level2">
@@ -275,7 +290,7 @@ d.tidy &lt;- d %&gt;%
 <div id="pre-processing" class="section level3">
 <h3>Pre-processing</h3>
 <p>1 – For reference, make a tidy table that groups by participant and averages across direction of rotation (e.g. left or right).</p>
-<pre class="r"><code>d.comparison &lt;- d %&gt;%
+<pre class="r"><code>d.comparison &lt;- d_anova %&gt;%
   group_by(Participant) %&gt;%
   summarise(meancondition1_gain0.8 = mean(Condition1_Gain0.8),
             meancondition2_gain1 = mean(Condition2_Gain1),
@@ -285,14 +300,14 @@ d.tidy &lt;- d %&gt;%
 <div id="descriptive-statistics" class="section level3">
 <h3>Descriptive statistics</h3>
 <p>1 – Here are means of pain-free range of motion per condition.</p>
-<pre class="r"><code>mean0.8 &lt;- mean(d$Condition1_Gain0.8)
-mean1 &lt;- mean(d$Condition2_Gain1)
-mean1.2 &lt;- mean(d$Condition3_Gain1.2)</code></pre>
+<pre class="r"><code>mean0.8 &lt;- mean(d_anova$Condition1_Gain0.8)
+mean1 &lt;- mean(d_anova$Condition2_Gain1)
+mean1.2 &lt;- mean(d_anova$Condition3_Gain1.2)</code></pre>
 </div>
 <div id="inferential-statistics" class="section level3">
 <h3>Inferential statistics</h3>
 <p>1 – We create a repeated measures ANOVA using condition as a within subjects variable, and DirectionofRotation as a between subjects variable. This achieves nearly the desired effect size and degrees of freedom, and the correct p value.</p>
-<p>Note that “DirectionofRotation” is described to be a within-, not a between-subjects variable in the report. However, with DirectionofRotation as a within-subj variable, it just yields 46 degrees of freedom (But even with DirectionofRotation as a between-subj variable, the df is wrong – it is 92 instead of 94 as reported). Below in the Supplemental Section, we included analysis with correct design; statistical significance does not differ.</p>
+<p>Note that, according to the author (in an email correspondence), each participant x direction of rotation was considered to be a unique case.</p>
 <blockquote>
 <p>The repeated measures ANOVA revealed a large overall effect of visual-proprioceptive feedback (condition) on pain-free range of motion F(2, 94) = 18.9, p &lt; .001, ηp 2 = 0.29. (from Harvie et al. p.388)</p>
 </blockquote>
@@ -300,11 +315,13 @@ mean1.2 &lt;- mean(d$Condition3_Gain1.2)</code></pre>
 #Condition is within variable, and DirectionofRotation is the between variable; 
 #Note: DirectionofRotation SHOULD be a within variable... 
 
-modANOVA &lt;- ezANOVA(data = d.tidy,
+modANOVA &lt;- ezANOVA(data = d.tidy_anova %&gt;%
+                      mutate(participant_direction = paste(Participant, DirectionofRotation, sep = &quot;_&quot;)),
                   dv = rangeofmotion,
-                  wid = Participant,
+                  # wid = Participant,
+                  wid = participant_direction,
                   within = .(condition),
-                  between = DirectionofRotation,
+                  # within = .(condition, DirectionofRotation),
                   detailed = TRUE,
                   return_aov = TRUE) #returns aov object, which is supposedly useful for calculating partial eta squared, but I could not figure out</code></pre>
 <pre class="r"><code># calculating partial eta squared 
@@ -327,47 +344,41 @@ for (cR in 1:nrow(modANOVA$ANOVA)) {
 }
 modANOVA$ANOVA$partialetasquared.lower &lt;- loweretasquared
 modANOVA$ANOVA$partialetasquared.upper &lt;- upperetasquared</code></pre>
-<pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;18.9&quot;, obtainedValue = modANOVA$ANOVA$F[3], valueType = 'F')</code></pre>
-<pre><code>## [1] &quot;MINOR_ERROR for F. The reported value (18.9) and the obtained value (18.6) differed by 1.59%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
-<pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;94&quot;, obtainedValue = modANOVA$ANOVA$DFd[3], valueType = 'df')</code></pre>
-<pre><code>## [1] &quot;MINOR_ERROR for df. The reported value (94) and the obtained value (92) differed by 2.13%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
-<pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;&lt;.001&quot;, obtainedValue = modANOVA$ANOVA$p[3], valueType = 'p', eyeballCheck = TRUE)</code></pre>
+<pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;18.9&quot;, obtainedValue = modANOVA$ANOVA$F[2], valueType = 'F')</code></pre>
+<pre><code>## [1] &quot;MATCH for F. The reported value (18.9) and the obtained value (18.9) differed by 0%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
+<pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;94&quot;, obtainedValue = modANOVA$ANOVA$DFd[2], valueType = 'df')</code></pre>
+<pre><code>## [1] &quot;MATCH for df. The reported value (94) and the obtained value (94) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
+<pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;&lt;.001&quot;, obtainedValue = modANOVA$ANOVA$p[2], valueType = 'p', eyeballCheck = TRUE)</code></pre>
 <pre><code>## [1] &quot;MATCH for p. Eyeball comparison only.&quot;</code></pre>
-<p>2 – Second, we look at all pairwise comparisons. Since the methodology was not mentioned (e.g. either F-statistic comparisons or t tests), we used t-tests. All were &lt; 0.01. We additionally checked Bonferroni corrected t-tests, and these all also yielded ps &lt; .01.</p>
+<p>2 – Second, we look at all pairwise comparisons, which were t-tests as confirmed by the authors in an email correspondence. All were &lt; 0.01. We additionally checked Bonferroni corrected t-tests, and these all also yielded ps &lt; .01.</p>
 <blockquote>
 <p>All pairwise comparisons were significant (ps &lt; .01). (from Harvie et al. p.388)</p>
 </blockquote>
-<pre class="r"><code>ttest0.8v1 &lt;- t.test(d$Condition1_Gain0.8, d$Condition2_Gain1, paired = TRUE)
-ttest0.8v1.2 &lt;- t.test(d$Condition1_Gain0.8, d$Condition3_Gain1.2, paired = TRUE)
-ttest1.2v1 &lt;- t.test(d$Condition3_Gain1.2, d$Condition2_Gain1, paired = TRUE)
-
-# copilot: bonf
-ttestbonf &lt;- with(d.tidy, pairwise.t.test(rangeofmotion, condition), paired=TRUE, p.adj = &quot;bonf&quot;)</code></pre>
+<pre class="r"><code>ttest0.8v1 &lt;- t.test(d.tidy_ttest$Condition1_Gain0.8, d.tidy_ttest$Condition2_Gain1.0, paired = TRUE)
+ttest0.8v1.2 &lt;- t.test(d.tidy_ttest$Condition1_Gain0.8, d.tidy_ttest$Condition3_Gain1.2, paired = TRUE)
+ttest1.2v1 &lt;- t.test(d.tidy_ttest$Condition3_Gain1.2, d.tidy_ttest$Condition2_Gain1.0, paired = TRUE)</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;&lt;.01&quot;, obtainedValue = ttest0.8v1$p.value, valueType = 'p', eyeballCheck = TRUE)</code></pre>
 <pre><code>## [1] &quot;MATCH for p. Eyeball comparison only.&quot;</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;&lt;.01&quot;, obtainedValue = ttest0.8v1.2$p.value, valueType = 'p', eyeballCheck = TRUE)</code></pre>
 <pre><code>## [1] &quot;MATCH for p. Eyeball comparison only.&quot;</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;&lt;.01&quot;, obtainedValue = ttest1.2v1$p.value, valueType = 'p', eyeballCheck = TRUE)</code></pre>
 <pre><code>## [1] &quot;MATCH for p. Eyeball comparison only.&quot;</code></pre>
-<p>3 – Third, we compare effect sizes and related p values. While the effect sizes were right, the p values had major numerical errors; that said, there was no change in the statistical inference conclusion. In other words, there was a stastically significant difference between understating and normal as well as between overstating and normal.</p>
-<p>However, note that the reported values were reproduced using independent samples t-test, which is a wrong choice for this dataset (because responses came from the same, not different, participants). Paired-sample t-tests report different Cohen’s d values (see Supplemental Section below).</p>
+<p>3 – Third, we compare effect sizes and related p values. Effect sizes were not replicated – Cohen’s d for both comparisons were lower than the authors reported. The p-values were generally replicated, though one was found to be a major error probably due to a rounding issue or misnomer (e.g., “=” intended to mean “&lt;” in the paper).</p>
 <blockquote>
 <p>As shown in Figure 3, when vision understated true rotation, pain-free range of motion was increased, and this was a medium-sized effect, p = .006, d = 0.67; when vision overstated true rotation, pain-free range of motion was decreased, and this was a large effect, p = .001, d = 0.80. (from Harvie et al. p.388-9)</p>
 </blockquote>
-<pre class="r"><code># condition 1 vs. 2
-ttest_cohen1vs2 &lt;- independentSamplesTTest(rangeofmotion ~ condition, d.tidy %&gt;% filter(condition != &quot;Condition3_Gain1.2&quot;))
+<pre class="r"><code>ttest_cohen1vs2 &lt;- pairedSamplesTTest(formula = ~Condition1_Gain0.8 + Condition2_Gain1.0, data=as.data.frame(d.tidy_ttest))
 
-# condition 2 vs. 3
-ttest_cohen2vs3 &lt;- independentSamplesTTest(rangeofmotion ~ condition, d.tidy %&gt;% filter(condition != &quot;Condition1_Gain0.8&quot;))</code></pre>
+ttest_cohen2vs3 &lt;- pairedSamplesTTest(formula = ~Condition2_Gain1.0 + Condition3_Gain1.2, data=as.data.frame(d.tidy_ttest))</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;.67&quot;, obtainedValue = ttest_cohen1vs2$effect.size, valueType = 'd')</code></pre>
-<pre><code>## [1] &quot;MATCH for d. The reported value (0.67) and the obtained value (0.67) differed by 0%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
+<pre><code>## [1] &quot;MAJOR_ERROR for d. The reported value (0.67) and the obtained value (0.42) differed by 37.31%. NB obtained value was rounded to 2 decimal places.&quot;</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;.006&quot;, obtainedValue = ttest_cohen1vs2$p.value, valueType = 'p')</code></pre>
-<pre><code>## [1] &quot;MAJOR_ERROR for p. The reported value (0.006) and the obtained value (0.002) differed by 66.67%. NB obtained value was rounded to 3 decimal places.&quot;</code></pre>
+<pre><code>## [1] &quot;MATCH for p. The reported value (0.006) and the obtained value (0.006) differed by 0%. NB obtained value was rounded to 3 decimal places.&quot;</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;.8&quot;, obtainedValue = ttest_cohen2vs3$effect.size, valueType = 'd')</code></pre>
-<pre><code>## [1] &quot;MATCH for d. The reported value (0.8) and the obtained value (0.8) differed by 0%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
+<pre><code>## [1] &quot;MAJOR_ERROR for d. The reported value (0.8) and the obtained value (0.6) differed by 25%. NB obtained value was rounded to 1 decimal places.&quot;</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;.001&quot;, obtainedValue = ttest_cohen2vs3$p.value, valueType = 'p')</code></pre>
 <pre><code>## [1] &quot;MAJOR_ERROR for p. The reported value (0.001) and the obtained value (0) differed by 100%. NB obtained value was rounded to 3 decimal places.&quot;</code></pre>
-<p>4 – Fourth, we compare the percentage change and confidence intervals. The percentage change for the understatement (e.g. 0.8 vs 1) had a major numerical error, and the confidence interval for the overstatement had a major and a minor numerical errors. Overall, however, the same effects were seen.</p>
+<p>4 – Fourth, we compare the percentage change and confidence intervals. The confidence interval for the understatement (e.g. 0.8 vs 1) had a major numerical error, and the confidence interval for the overstatement had two major numerical errors. Overall, however, the same effects were seen.</p>
 <blockquote>
 <p>Specifically, during visual feedback that understated true rotation, pain-free range of motion was increased by 6% (95% confidence interval, or CI = [2%, 11%]); during visual feedback that overstated true rotation, pain-free range of motion decreased by 7% (95% CI = [3%, 11%]). Therefore, our results show an overall effect of the manipulation of 13%.&quot; (from Harvie et al. p.389)</p>
 </blockquote>
@@ -379,17 +390,17 @@ mean_1vs2 &lt;- (ttest_cohen1vs2$mean[1] - ttest_cohen1vs2$mean[2])*100
 confint_2vs3 &lt;- (ttest_cohen2vs3$conf.int)*100
 mean_2vs3 &lt;- (ttest_cohen2vs3$mean[1] - ttest_cohen2vs3$mean[2])*100</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;6&quot;, obtainedValue = mean_1vs2, valueType = 'mean')</code></pre>
-<pre><code>## [1] &quot;MAJOR_ERROR for mean. The reported value (6) and the obtained value (7) differed by 16.67%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
+<pre><code>## [1] &quot;MATCH for mean. The reported value (6) and the obtained value (6) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;2&quot;, obtainedValue = confint_1vs2[1], valueType = 'ci')</code></pre>
-<pre><code>## [1] &quot;MAJOR_ERROR for ci. The reported value (2) and the obtained value (3) differed by 50%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
+<pre><code>## [1] &quot;MATCH for ci. The reported value (2) and the obtained value (2) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;11&quot;, obtainedValue = confint_1vs2[2], valueType = 'ci')</code></pre>
-<pre><code>## [1] &quot;MATCH for ci. The reported value (11) and the obtained value (11) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
-<pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;7&quot;, obtainedValue = mean_2vs3, valueType = 'mean')</code></pre>
-<pre><code>## [1] &quot;MATCH for mean. The reported value (7) and the obtained value (7) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
-<pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;3&quot;, obtainedValue = confint_2vs3[1], valueType = 'ci')</code></pre>
-<pre><code>## [1] &quot;MATCH for ci. The reported value (3) and the obtained value (3) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
-<pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;11&quot;, obtainedValue = confint_2vs3[2], valueType = 'ci')</code></pre>
 <pre><code>## [1] &quot;MINOR_ERROR for ci. The reported value (11) and the obtained value (10) differed by 9.09%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
+<pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;7&quot;, obtainedValue = mean_2vs3, valueType = 'mean')</code></pre>
+<pre><code>## [1] &quot;MAJOR_ERROR for mean. The reported value (7) and the obtained value (8) differed by 14.29%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
+<pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;3&quot;, obtainedValue = confint_2vs3[1], valueType = 'ci')</code></pre>
+<pre><code>## [1] &quot;MAJOR_ERROR for ci. The reported value (3) and the obtained value (4) differed by 33.33%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
+<pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;11&quot;, obtainedValue = confint_2vs3[2], valueType = 'ci')</code></pre>
+<pre><code>## [1] &quot;MATCH for ci. The reported value (11) and the obtained value (11) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;13&quot;, obtainedValue = mean_1vs2+mean_2vs3, valueType = 'mean')</code></pre>
 <pre><code>## [1] &quot;MATCH for mean. The reported value (13) and the obtained value (13) differed by 0%. NB obtained value was rounded to 0 decimal places.&quot;</code></pre>
 </div>
@@ -397,8 +408,8 @@ mean_2vs3 &lt;- (ttest_cohen2vs3$mean[1] - ttest_cohen2vs3$mean[2])*100</code></
 <div id="step-5-conclusion" class="section level2">
 <h2>Step 5: Conclusion</h2>
 <p>In this computational reproducibility, the findings of the original paper were largely confirmed — that there was a large effect of manipulated perception on pain perception on both the understating and overstating condition. In addition, though there were minor or major numerical discrepancies across the findings, these did not affect any statistical conclusions. There are still several questions we have (below).</p>
-<p>First of all, our repeated measures ANOVA yielded nearly the same F statistic (18.9 in paper vs 18.6 calculated) with the same p-value (&lt;0.01); please note, however, that the degrees of freedom in our calculation were off (94 in paper and 92 calculated). Second of all, all pairwise comparisons among the three conditions were the same as reported (p&lt;0.01); note that the author did not specify the type of pair-wise and we just assumed t-tests (rather than assuming insufficient information). Third of all, while the effect sizes for understating vision (virtual rotation was 80% of actual rotation) and overstating vision (virtual rotation was 80% of actual rotation), the p-values had major errors (0.006 vs 0.002; 0.001 vs 0.0003) that did not affect statistical conclusions (i.e., can still conclude the effect was significant). Fourth of all, while there were several errors in changes in range of motion — a major numerical error in the estimation of the percentage increase in range of motion for the understating range of motion condition (6% paper vs. 7% calculated), a minor numerical error in the lower confidence interval estimate for the range of motion increase for the understating condition (2% paper vs. 3% calculation), and a minor numerical error int he upper confidence interval estimate for the range of motion decrease for the overstating condition (11% paper vs. 10.4% calculation) — these did not effect the general conclusions for percentage changes and confidence intervals and plausibly come from minor rounding issues. Please note that we did not record the repeated measures ANOVA errors as insufficient errors, but as minor numerical errors.</p>
-<p>Some outstanding questions are: (a) how did the authors get 94 not 92 degrees of freedom?, (b) why did they seemingly use direction of rotation as a between-subjects variable, and (c) why did the numerical errors that happened happen?</p>
+<p>First of all, our repeated measures ANOVA yielded the same F statistic and the same p-value (&lt;0.01). Second of all, all pairwise comparisons among the three conditions were the same as reported (p&lt;0.01). Third of all, the effect sizes were not replicated for understating vision (virtual rotation was 80% of actual rotation) and overstating vision (virtual rotation was 80% of actual rotation) and were found to be lower than reported, while the p-values were replicated and thus did not affect statistical conclusions. Fourth of all, while there were several errors in changes in range of motion — three major errors in confidence interval computation — which did not effect the general conclusions for percentage changes and confidence intervals and plausibly come from minor rounding issues.</p>
+<p>An outstanding question is, what is causing the discrepancy between the reported and currently computed effect sizes?</p>
 <pre class="r"><code>Author_Assistance = FALSE # was author assistance provided? (if so, enter TRUE)
 
 Insufficient_Information_Errors &lt;- 0 # how many discrete insufficient information issues did you encounter?
@@ -455,7 +466,7 @@ if(reportType == &quot;final&quot;){
 ##  language (EN)                        
 ##  collate  en_US.UTF-8                 
 ##  tz       America/Los_Angeles         
-##  date     2018-06-13                  
+##  date     2018-07-04                  
 ## 
 ##  package      * version date      
 ##  assertthat     0.2.0   2017-04-11
@@ -631,143 +642,6 @@ if(reportType == &quot;final&quot;){
 ##  CRAN (R 3.4.2)                             
 ##  CRAN (R 3.4.0)                             
 ##  cran (@2.1.19)</code></pre>
-</div>
-<div id="supplemental-section" class="section level1">
-<h1>Supplemental Section</h1>
-<p>As pointed out above, the authors seem to have made a few wrong analysis choices.</p>
-<ol style="list-style-type: decimal">
-<li><p>The “direction of rotation” seems to have been analyzed as a between-subjects variable in ANOVA, but it should be a within-subjects variable.</p></li>
-<li><p>t-tests and Cohen’s d were seemingly computed based on the assumption of independent samples instead of paired samples.</p></li>
-</ol>
-<p>We provide the code for the correct analyses below. The conclusions based on statistical significance do not differ, but Cohen’s d values become smaller.</p>
-<pre class="r"><code># ANOVA
-modANOVA_corr &lt;- ezANOVA(data = d.tidy,
-                  dv = rangeofmotion,
-                  wid = Participant,
-                  within = .(condition, DirectionofRotation),
-                  detailed = TRUE,
-                  return_aov = TRUE) #returns aov object, which is supposedly useful for calculating partial eta squared, but I could not figure out
-
-print(modANOVA_corr)</code></pre>
-<pre><code>## $ANOVA
-##                          Effect DFn DFd          SSn       SSd
-## 1                   (Intercept)   1  23 1.436802e+02 0.2067556
-## 2                     condition   2  46 4.321056e-01 0.7135611
-## 3           DirectionofRotation   1  23 1.400278e-02 0.3123306
-## 4 condition:DirectionofRotation   2  46 7.338889e-03 0.3533278
-##              F            p p&lt;.05         ges
-## 1 1.598334e+04 3.366327e-34     * 0.989082281
-## 2 1.392793e+01 1.864561e-05     * 0.214117100
-## 3 1.031164e+00 3.204493e-01       0.008751858
-## 4 4.777276e-01 6.232336e-01       0.004606053
-## 
-## $`Mauchly's Test for Sphericity`
-##                          Effect         W            p p&lt;.05
-## 2                     condition 0.4933248 0.0004211748     *
-## 4 condition:DirectionofRotation 0.9333964 0.4685193099      
-## 
-## $`Sphericity Corrections`
-##                          Effect       GGe        p[GG] p[GG]&lt;.05       HFe
-## 2                     condition 0.6637131 0.0002853589         * 0.6888482
-## 4 condition:DirectionofRotation 0.9375555 0.6112499875           1.0178198
-##          p[HF] p[HF]&lt;.05
-## 2 0.0002324356         *
-## 4 0.6232335811          
-## 
-## $aov
-## 
-## Call:
-## aov(formula = formula(aov_formula), data = data)
-## 
-## Grand Mean: 0.9988889
-## 
-## Stratum 1: Participant
-## 
-## Terms:
-##                 Residuals
-## Sum of Squares  0.2067556
-## Deg. of Freedom        23
-## 
-## Residual standard error: 0.0948123
-## 
-## Stratum 2: Participant:condition
-## 
-## Terms:
-##                 condition Residuals
-## Sum of Squares  0.4321056 0.7135611
-## Deg. of Freedom         2        46
-## 
-## Residual standard error: 0.124548
-## 2 out of 4 effects not estimable
-## Estimated effects may be unbalanced
-## 
-## Stratum 3: Participant:DirectionofRotation
-## 
-## Terms:
-##                 DirectionofRotation  Residuals
-## Sum of Squares           0.01400278 0.31233056
-## Deg. of Freedom                   1         23
-## 
-## Residual standard error: 0.1165315
-## 2 out of 3 effects not estimable
-## Estimated effects are balanced
-## 
-## Stratum 4: Participant:condition:DirectionofRotation
-## 
-## Terms:
-##                 condition:DirectionofRotation Residuals
-## Sum of Squares                      0.0073389 0.3533278
-## Deg. of Freedom                             2        46
-## 
-## Residual standard error: 0.08764153
-## Estimated effects may be unbalanced</code></pre>
-<pre class="r"><code># t-test and cohen's d
-pairedSamplesTTest(~Condition1_Gain0.8 + Condition2_Gain1, data=d)</code></pre>
-<pre><code>## 
-##    Paired samples t-test 
-## 
-## Variables:  Condition1_Gain0.8 , Condition2_Gain1 
-## 
-## Descriptive statistics: 
-##             Condition1_Gain0.8 Condition2_Gain1 difference
-##    mean                  1.065            1.000      0.065
-##    std dev.              0.139            0.000      0.139
-## 
-## Hypotheses: 
-##    null:        population means equal for both measurements
-##    alternative: different population means for each measurement
-## 
-## Test results: 
-##    t-statistic:  3.264 
-##    degrees of freedom:  47 
-##    p-value:  0.002 
-## 
-## Other information: 
-##    two-sided 95% confidence interval:  [0.025, 0.106] 
-##    estimated effect size (Cohen's d):  0.471</code></pre>
-<pre class="r"><code>pairedSamplesTTest(~Condition3_Gain1.2 + Condition2_Gain1, data=d)</code></pre>
-<pre><code>## 
-##    Paired samples t-test 
-## 
-## Variables:  Condition3_Gain1.2 , Condition2_Gain1 
-## 
-## Descriptive statistics: 
-##             Condition3_Gain1.2 Condition2_Gain1 difference
-##    mean                  0.931            1.000     -0.069
-##    std dev.              0.122            0.000      0.122
-## 
-## Hypotheses: 
-##    null:        population means equal for both measurements
-##    alternative: different population means for each measurement
-## 
-## Test results: 
-##    t-statistic:  -3.899 
-##    degrees of freedom:  47 
-##    p-value:  &lt;.001 
-## 
-## Other information: 
-##    two-sided 95% confidence interval:  [-0.104, -0.033] 
-##    estimated effect size (Cohen's d):  0.563</code></pre>
 </div>
 
 
