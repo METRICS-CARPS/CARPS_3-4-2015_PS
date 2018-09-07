@@ -11,12 +11,12 @@ output:
 articleID <- "3-4-2015_PS" # insert the article ID code here e.g., "10-3-2015_PS"
 reportType <- 'final'
 pilotNames <- "Erik Santoro, Tysen Dauer, Jaclyn Schwartz" # insert the pilot's name here e.g., "Tom Hardwicke". If there are multiple pilots enter both names in a character string e.g., "Tom Hardwicke, Bob Dylan"
-copilotNames <- "Erica Yoon" # insert the co-pilot's name here e.g., "Michael Frank". If there are multiple co-pilots enter both names in a character string e.g., "Tom Hardwicke, Bob Dylan"
+copilotNames <- "Erica Yoon, Tom Hardwicke" # insert the co-pilot's name here e.g., "Michael Frank". If there are multiple co-pilots enter both names in a character string e.g., "Tom Hardwicke, Bob Dylan"
 pilotTTC <- 720 # insert the pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
-copilotTTC <- 120 # insert the co- pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
+copilotTTC <- 240 # insert the co- pilot's estimated time to complete (in minutes, fine to approximate) e.g., 120
 pilotStartDate <- as.Date("10/31/17", format = "%m/%d/%y") # insert the pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
 copilotStartDate <- as.Date("06/13/18", format = "%m/%d/%y") # insert the co-pilot's start date in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
-completionDate <- as.Date("", format = "%m/%d/%y") # copilot insert the date of final report completion (after any necessary rounds of author assistance) in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
+completionDate <- as.Date("09/07/18", format = "%m/%d/%y") # copilot insert the date of final report completion (after any necessary rounds of author assistance) in US format e.g., as.Date("01/25/18", format = "%m/%d/%y")
 ```
 
 -------
@@ -205,13 +205,13 @@ ttest_cohen2vs3 <- pairedSamplesTTest(formula = ~Condition2_Gain1.0 + Condition3
 We cannot reproduce the effect sizes:
 
 ```{r}
-tmp <- reproCheck(reportedValue = ".67", obtainedValue = ttest_cohen1vs2$effect.size, valueType = 'd')
+reportObject <- reproCheck(reportedValue = ".67", obtainedValue = ttest_cohen1vs2$effect.size, valueType = 'd')
 
-tmp <- reproCheck(reportedValue = ".006", obtainedValue = ttest_cohen1vs2$p.value, valueType = 'p')
+reportObject <- reproCheck(reportedValue = ".006", obtainedValue = ttest_cohen1vs2$p.value, valueType = 'p')
 
-tmp <- reproCheck(reportedValue = ".8", obtainedValue = ttest_cohen2vs3$effect.size, valueType = 'd')
+reportObject <- reproCheck(reportedValue = ".8", obtainedValue = ttest_cohen2vs3$effect.size, valueType = 'd')
 
-tmp <- reproCheck(reportedValue = ".001", obtainedValue = ttest_cohen2vs3$p.value, valueType = 'p')
+reportObject <- reproCheck(reportedValue = ".001", obtainedValue = ttest_cohen2vs3$p.value, valueType = 'p')
 ```
 (NB - above comparisons for illustration purposes, not being recorded in report object).
 
@@ -246,7 +246,11 @@ The percentage change for the understatement (e.g. 0.8 vs 1) had a minor numeric
 
 # Step 5: Conclusion
 
-In this reproducibility check we were able to reproduce Figure 3 but ran into difficulties reproducing some of the inferential statistics.
+In this reproducibility check we were able to reproduce the decriptive statistics (Figure 3) but ran into difficulties reproducing some of the inferential statistics. We contacted the authors and received asssitance that resolved some issues. However, we then lost contact with the authors and some reproducibility issues remained that we could not resolve.
+
+We could not reproduce two effect sizes (d). The authors reported that they tried to reproduce these values themselves and could "closely reproduce the Cohen’s d values". However, they did not share the exact values they obtained in their re-analysis. We could also not reproduce one mean and one bound of a confidence interval. The source of these issues is unclear.
+
+The reproducibility issues do not appear to undermine the original conclusions. The obtained effect sizes are smaller than those reported, but not substantially so. The mean and ci errors are of low magnitude.
 
 ```{r}
 Author_Assistance = TRUE # was author assistance provided? (if so, enter TRUE)
@@ -255,20 +259,20 @@ Insufficient_Information_Errors <- 0 # how many discrete insufficient informatio
 
 # Assess the causal locus (discrete reproducibility issues) of any reproducibility errors. Note that there doesn't necessarily have to be a one-to-one correspondance between discrete reproducibility issues and reproducibility errors. For example, it could be that the original article neglects to mention that a Greenhouse-Geisser correct was applied to ANOVA outcomes. This might result in multiple reproducibility errors, but there is a single causal locus (discrete reproducibility issue).
 
-locus_typo <- NA # how many discrete issues did you encounter that related to typographical errors?
-locus_specification <- 1 # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
-locus_analysis <- 2 # how many discrete issues did you encounter that related to errors in the authors' original analyses?
-locus_data <- NA # how many discrete issues did you encounter that related to errors in the data files shared by the authors?
-locus_unidentified <- NA # how many discrete issues were there for which you could not identify the cause
+locus_typo <- 0 # how many discrete issues did you encounter that related to typographical errors?
+locus_specification <- 3 # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
+locus_analysis <- 0 # how many discrete issues did you encounter that related to errors in the authors' original analyses?
+locus_data <- 0 # how many discrete issues did you encounter that related to errors in the data files shared by the authors?
+locus_unidentified <- 2 # how many discrete issues were there for which you could not identify the cause
 
 # How many of the above issues were resolved through author assistance?
-locus_typo_resolved <- NA # how many discrete issues did you encounter that related to typographical errors?
-locus_specification_resolved <- NA # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
-locus_analysis_resolved <- NA # how many discrete issues did you encounter that related to errors in the authors' original analyses?
-locus_data_resolved <- NA # how many discrete issues did you encounter that related to errors in the data files shared by the authors?
-locus_unidentified_resolved <- NA # how many discrete issues were there for which you could not identify the cause
+locus_typo_resolved <- 0 # how many discrete issues did you encounter that related to typographical errors?
+locus_specification_resolved <- 3 # how many discrete issues did you encounter that related to incomplete, incorrect, or unclear specification of the original analyses?
+locus_analysis_resolved <- 0 # how many discrete issues did you encounter that related to errors in the authors' original analyses?
+locus_data_resolved <- 0 # how many discrete issues did you encounter that related to errors in the data files shared by the authors?
+locus_unidentified_resolved <- 0 # how many discrete issues were there for which you could not identify the cause
 
-Affects_Conclusion <- NA # Do any reproducibility issues encounter appear to affect the conclusions made in the original article? This is a subjective judgement, but you should taking into account multiple factors, such as the presence/absence of decision errors, the number of target outcomes that could not be reproduced, the type of outcomes that could or could not be reproduced, the difference in magnitude of effect sizes, and the predictions of the specific hypothesis under scrutiny.
+Affects_Conclusion <- FALSE # Do any reproducibility issues encounter appear to affect the conclusions made in the original article? This is a subjective judgement, but you should taking into account multiple factors, such as the presence/absence of decision errors, the number of target outcomes that could not be reproduced, the type of outcomes that could or could not be reproduced, the difference in magnitude of effect sizes, and the predictions of the specific hypothesis under scrutiny.
 ```
 
 ```{r}

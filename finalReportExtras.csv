@@ -1,2 +1,2 @@
 articleID,pilotNames,copilotNames,pilotTTC,copilotTTC,pilotStartDate,copilotStartDate,completionDate,Author_Assistance,finalOutcome,Insufficient_Information_Errors,locus_typo,locus_specification,locus_analysis,locus_data,locus_unidentified,locus_typo_resolved,locus_specification_resolved,locus_analysis_resolved,locus_data_resolved,locus_unidentified_resolved
-3-4-2015_PS,"Erik Santoro, Tysen Dauer, Jaclyn Schwartz",Erica Yoon,720,120,2017-10-31,2018-06-13,NA,TRUE,Failure despite author assistance,0,NA,1,2,NA,NA,NA,NA,NA,NA,NA
+3-4-2015_PS,"Erik Santoro, Tysen Dauer, Jaclyn Schwartz","Erica Yoon, Tom Hardwicke",720,240,2017-10-31,2018-06-13,2018-09-07,TRUE,Failure despite author assistance,0,0,3,0,0,2,0,3,0,0,0
