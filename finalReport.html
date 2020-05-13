@@ -1637,7 +1637,7 @@ mean1.2</code></pre>
 </div>
 <div id="inferential-statistics" class="section level2">
 <h2>Inferential statistics</h2>
-<p>First, we look at the ANOVA. Note that, according to the author (in an email correspondence), each participant x direction of rotation was considered to be a unique case. This means the unit of analysis is different from the descriptive statistics and the t-tests below (where the unit of analysis is an idnvidual participant). This was not specified in the paper.</p>
+<p>First, we look at the ANOVA. Note that, according to the author (in an email correspondence), each participant x direction of rotation was considered to be a unique case. This means the unit of analysis is different from the descriptive statistics and the t-tests below (where the unit of analysis is an individual participant). This was not specified in the paper.</p>
 <blockquote>
 <p>The repeated measures ANOVA revealed a large overall effect of visual-proprioceptive feedback (condition) on pain-free range of motion F(2, 94) = 18.9, p &lt; .001, ηp 2 = 0.29. (from Harvie et al. p.388)</p>
 </blockquote>
@@ -1688,7 +1688,6 @@ ttest_cohen2vs3 &lt;- pairedSamplesTTest(formula = ~Condition2_Gain1.0 + Conditi
 <pre><code>## [1] &quot;MAJOR_ERROR for d. The reported value (0.8) and the obtained value (0.6) differed by 25%. Note that the obtained value was rounded to 1 decimal places to match the reported value.&quot;</code></pre>
 <pre class="r"><code>reportObject &lt;- reproCheck(reportedValue = &quot;.001&quot;, obtainedValue = ttest_cohen2vs3$p.value, valueType = 'p')</code></pre>
 <pre><code>## [1] &quot;MAJOR_ERROR for p. The reported value (0.001) and the obtained value (0) differed by 100%. Note that the obtained value was rounded to 3 decimal places to match the reported value.&quot;</code></pre>
-<p>(NB - above comparisons for illustration purposes, not being recorded in report object).</p>
 <p>Now, we compare the percentage change and confidence intervals.</p>
 <blockquote>
 <p>Specifically, during visual feedback that understated true rotation, pain-free range of motion was increased by 6% (95% confidence interval, or CI = [2%, 11%]); during visual feedback that overstated true rotation, pain-free range of motion decreased by 7% (95% CI = [3%, 11%]). Therefore, our results show an overall effect of the manipulation of 13%.&quot; (from Harvie et al. p.389)</p>
@@ -1719,9 +1718,9 @@ mean_2vs3 &lt;- (ttest_cohen2vs3$mean[1] - ttest_cohen2vs3$mean[2])*100</code></
 </div>
 <div id="step-5-conclusion" class="section level1">
 <h1>Step 5: Conclusion</h1>
-<p>In this reproducibility check we were able to reproduce the decriptive statistics (Figure 3) but ran into difficulties reproducing some of the inferential statistics. We contacted the authors and received asssitance that resolved some issues. However, we then lost contact with the authors and some reproducibility issues remained that we could not resolve.</p>
-<p>We could not reproduce two effect sizes (d). The authors reported that they tried to reproduce these values themselves and could “closely reproduce the Cohen’s d values”. However, they did not share the exact values they obtained in their re-analysis. We could also not reproduce one mean and one bound of a confidence interval. The source of these issues is unclear.</p>
-<p>The reproducibility issues do not appear to undermine the original conclusions. The obtained effect sizes are smaller than those reported, but not substantially so. The mean and ci errors are of low magnitude.</p>
+<p>In this reproducibility check we were able to reproduce the decriptive statistics (Figure 3) but ran into difficulties reproducing some of the inferential statistics. We contacted the authors and received asssitance that resolved some issues. Specifically, information was provided about the identity of statistical tests, units of analysis, and normalization procedures, that were not stated in the paper. Unfortunately, we then lost contact with the authors and some reproducibility issues remained that we could not resolve.</p>
+<p>We could not reproduce two effect sizes (d). The authors reported that they tried to reproduce these values themselves and could “closely reproduce the Cohen’s d values”. However, they did not share the exact values they obtained in their re-analysis. We could also not reproduce one mean and one bound of a confidence interval. The causal locus of these issues is unclear.</p>
+<p>The reproducibility issues do not appear to undermine the original conclusions. The obtained effect sizes are smaller than those reported, but not substantially so. The mean and ci discrepancies are of low magnitude.</p>
 <pre class="r"><code>Author_Assistance = TRUE # was author assistance provided? (if so, enter TRUE)
 
 Insufficient_Information_Errors &lt;- 0 # how many discrete insufficient information issues did you encounter?

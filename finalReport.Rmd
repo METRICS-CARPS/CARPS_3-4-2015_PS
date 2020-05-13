@@ -144,7 +144,7 @@ reportObject <- reproCheck(reportedValue = "figure", obtainedValue = ci1.2[2], v
 
 ## Inferential statistics
 
-First, we look at the ANOVA. Note that, according to the author (in an email correspondence), each participant x direction of rotation was considered to be a unique case. This means the unit of analysis is different from the descriptive statistics and the t-tests below (where the unit of analysis is an idnvidual participant). This was not specified in the paper.
+First, we look at the ANOVA. Note that, according to the author (in an email correspondence), each participant x direction of rotation was considered to be a unique case. This means the unit of analysis is different from the descriptive statistics and the t-tests below (where the unit of analysis is an individual participant). This was not specified in the paper.
 
 > The repeated measures ANOVA revealed a large overall effect of visual-proprioceptive feedback (condition) on pain-free range of motion F(2, 94) = 18.9, p < .001, ηp 2 = 0.29. (from Harvie et al. p.388)
 
@@ -213,7 +213,6 @@ reportObject <- reproCheck(reportedValue = ".8", obtainedValue = ttest_cohen2vs3
 
 reportObject <- reproCheck(reportedValue = ".001", obtainedValue = ttest_cohen2vs3$p.value, valueType = 'p')
 ```
-(NB - above comparisons for illustration purposes, not being recorded in report object).
 
 Now, we compare the percentage change and confidence intervals. 
 
@@ -246,11 +245,11 @@ The percentage change for the understatement (e.g. 0.8 vs 1) had a minor numeric
 
 # Step 5: Conclusion
 
-In this reproducibility check we were able to reproduce the decriptive statistics (Figure 3) but ran into difficulties reproducing some of the inferential statistics. We contacted the authors and received asssitance that resolved some issues. However, we then lost contact with the authors and some reproducibility issues remained that we could not resolve.
+In this reproducibility check we were able to reproduce the decriptive statistics (Figure 3) but ran into difficulties reproducing some of the inferential statistics. We contacted the authors and received asssitance that resolved some issues. Specifically, information was provided about the identity of statistical tests, units of analysis, and normalization procedures, that were not stated in the paper. Unfortunately, we then lost contact with the authors and some reproducibility issues remained that we could not resolve.
 
-We could not reproduce two effect sizes (d). The authors reported that they tried to reproduce these values themselves and could "closely reproduce the Cohen’s d values". However, they did not share the exact values they obtained in their re-analysis. We could also not reproduce one mean and one bound of a confidence interval. The source of these issues is unclear.
+We could not reproduce two effect sizes (d). The authors reported that they tried to reproduce these values themselves and could "closely reproduce the Cohen’s d values". However, they did not share the exact values they obtained in their re-analysis. We could also not reproduce one mean and one bound of a confidence interval. The causal locus of these issues is unclear.
 
-The reproducibility issues do not appear to undermine the original conclusions. The obtained effect sizes are smaller than those reported, but not substantially so. The mean and ci errors are of low magnitude.
+The reproducibility issues do not appear to undermine the original conclusions. The obtained effect sizes are smaller than those reported, but not substantially so. The mean and ci discrepancies are of low magnitude.
 
 ```{r}
 Author_Assistance = TRUE # was author assistance provided? (if so, enter TRUE)
